@@ -29,6 +29,10 @@ type Listing = {
 };
 
 type Post = {
+  city: string;
+  country: string;
+  caption: string;
+  imageUrl: string | Blob | undefined;
   _id: string;
   title: string;
   content: string;
@@ -52,7 +56,7 @@ const SettingsPage = () => {
     profilePic: ''
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; profilePic?: string; general?: string }>({});
 
   useEffect(() => {
     fetchUserData();

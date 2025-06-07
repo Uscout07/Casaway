@@ -1,3 +1,4 @@
+// app/profile/[id]/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -6,65 +7,11 @@ import { Icon } from '@iconify/react';
 import ListingCard from '../../components/listingCard';
 import PostModal from '../../components/postModal';
 
-interface User {
-    _id: string;
-    name: string;
-    username: string;
-    city: string;
-    country: string;
-    bio: string;
-    profilePic?: string;
-    phone?: string;
-    role: 'user' | 'admin';
-    followers: string[];
-    following: string[];
-    instagramUrl?: string;
-    createdAt: string;
-    updatedAt: string;
-}
+// Import interfaces from the shared types file
+import { User, Listing, Post } from '../../types/index'; // Adjust path as necessary
 
-interface Listing {
-    _id: string;
-    title: string;
-    details: string;
-    type: 'Single Room' | 'Whole Apartment' | 'Whole House';
-    amenities: string[];
-    city: string;
-    country: string;
-    roommates: string;
-    tags: string[];
-    availability: {
-        startDate: string;
-        endDate: string;
-    }[];
-    images: string[];
-    thumbnail: string;
-    user: {
-        _id: string;
-        name: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-}
-
-interface Post {
-    _id: string;
-    user: {
-        _id: string;
-        name: string;
-        username: string;
-        profilePic?: string;
-    };
-    caption: string;
-    tags: string[];
-    city: string;
-    country: string;
-    imageUrl: string;
-    images: string[];
-    status: 'draft' | 'published';
-    createdAt: string;
-    updatedAt: string;
-}
+// (Remaining code is the same)
+// ...
 
 const ProfilePage = () => {
     const params = useParams();
@@ -359,9 +306,9 @@ const ProfilePage = () => {
                                     onClick={handleFollowToggle}
                                     disabled={followLoading}
                                     className={`w-[145px] h-[45px] rounded-full font-medium transition-colors flex items-center justify-center gap-2 ${isFollowing
-                                            ? 'bg-gray-500 text-white hover:bg-gray-600'
-                                            : 'bg-forest text-white hover:bg-teal-800'
-                                        } ${followLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        ? 'bg-gray-500 text-white hover:bg-gray-600'
+                                        : 'bg-forest text-white hover:bg-teal-800'
+                                    } ${followLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     {followLoading ? (
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -442,7 +389,15 @@ const ProfilePage = () => {
             ) : listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12">
                     {listings.map(listing => (
-                        <ListingCard key={listing._id} listing={listing} />
+                        <ListingCard
+                            key={listing._id}
+                            listing={{
+                                ...listing,
+                                availability: listing.availability.map(
+                                    (slot) => `${slot.startDate} - ${slot.endDate}`
+                                ),
+                            }}
+                        />
                     ))}
                 </div>
             ) : (
@@ -547,7 +502,7 @@ const ProfilePage = () => {
             {user && <ProfileHeader />}
             <ListingsSection />
             <PostsSection />
-            
+
             {selectedPost && modalOpen && (
                 <PostModal
                     post={selectedPost}

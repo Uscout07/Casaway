@@ -1,22 +1,51 @@
 // components/CreatePostForm.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 
 type CreatePostFormProps = {
   onPostCreated: () => void;
+  initialImageUrl?: string;
+  initialCountry?: string;
+  initialCity?: string;
 };
 
-const CreatePostForm: React.FC<CreatePostFormProps> = ({ onPostCreated }) => {
+const CreatePostForm: React.FC<CreatePostFormProps> = ({ 
+  onPostCreated, 
+  initialImageUrl = '', 
+  initialCountry = 'India', 
+  initialCity = 'Asoda Todran' 
+}) => {
   const [caption, setCaption] = useState('');
   const [tagsInput, setTagsInput] = useState('');
-  const [countryInput, setCountryInput] = useState('India');
-  const [cityInput, setCityInput] = useState('Asoda Todran');
+  const [countryInput, setCountryInput] = useState(initialCountry);
+  const [cityInput, setCityInput] = useState(initialCity);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Image upload state (matching page.tsx)
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
+
+  // Initialize with initial image if provided
+  useEffect(() => {
+    if (initialImageUrl) {
+      const initialImage = {
+        id: Date.now(),
+        url: initialImageUrl,
+        name: 'initial-image'
+      };
+      setSelectedImages([initialImage]);
+    }
+  }, [initialImageUrl]);
+
+  // Update country and city when props change
+  useEffect(() => {
+    setCountryInput(initialCountry);
+  }, [initialCountry]);
+
+  useEffect(() => {
+    setCityInput(initialCity);
+  }, [initialCity]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;

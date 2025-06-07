@@ -9,6 +9,13 @@ type IconProps = {
     icon: string;
     className?: string;
 };
+type CreatePostFormProps = {
+    onPostCreated: () => void;
+    // Add these props if you want them controlled by the parent
+    initialImageUrl?: string; // Made optional as it might not always be there
+    initialCountry?: string;
+    initialCity?: string;
+};
 
 const UploadListingPage = () => {
     const [selectedImages, setSelectedImages] = useState<any[]>([]); // Added type for selectedImages
@@ -337,6 +344,12 @@ const UploadListingPage = () => {
         // For this example, we just show an alert in CreatePostForm
     };
 
+    interface CreatePostFormProps {
+        country: string;
+        city: string;
+        onPostCreated: () => void;
+    }
+
     return (
         <div className="min-h-screen bg-ambient font-inter pt-[10vh]">
             <h1 className="text-[24px] py-8 font-bold text-forest text-center">
@@ -375,7 +388,7 @@ const UploadListingPage = () => {
                 <div className="flex justify-evenly">
                     <div className="p-4 w-1/3 flex flex-col space-y-6">
                         {/* Image Upload Section */}
-                        <div className="bg-white min-w-[460px] min-h-[340px] rounded-lg p-6 flex flex-col items-center justify-center p-8 text-center mb-4">
+                        <div className="bg-white min-w-[460px] min-h-[340px] rounded-lg flex flex-col items-center justify-center p-8 text-center mb-4">
                             <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-teal-600 mx-auto mb-4" />
                             <p className="text-gray-600 mb-4">Upload Images of Your Property</p>
                             <input
@@ -748,10 +761,11 @@ const UploadListingPage = () => {
                 // Render CreatePostForm when viewMode is 'post'
                 <div className="flex justify-center mt-8">
                     <div className="w-full">
+                        // In app/upload/page.tsx
                         <CreatePostForm
-                            imageUrl={selectedImages[0]?.url || ''} // Pass the first uploaded image as imageUrl for the post
-                            country={formData.country}
-                            city={formData.city}
+                            initialImageUrl={selectedImages[0]?.url || ''}
+                            initialCountry={formData.country}
+                            initialCity={formData.city}
                             onPostCreated={handlePostCreated}
                         />
                     </div>
