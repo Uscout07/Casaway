@@ -10,7 +10,8 @@ import { Listing } from './types'; // <--- Crucial: Ensure this is correctly imp
 
 
 export default function HomePage() {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = "https://casaway-backend.onrender.com";
+
 
   // ── AUTOCOMPLETE STATE ──
   const [destinationInput, setDestinationInput] = useState<string>('');
