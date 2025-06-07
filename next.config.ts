@@ -10,4 +10,6 @@ module.exports = {
 
     ];
   },
+  Images: {
+    domains: ['localhost', 'res.cloudinary.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],}
 };
