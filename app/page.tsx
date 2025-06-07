@@ -1,38 +1,12 @@
+// app/page.tsx
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
-import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import ListingCard from './components/listingCard'; // adjust path if needed
-
-
-
-interface Listing {
-  _id: string;
-  title: string;
-  details: string;
-  type: 'Single Room' | 'Whole Apartment' | 'Whole House';
-  amenities: string[];
-  city: string;
-  country: string;
-  roommates: string;
-  tags: string[];
-  availability: {
-    startDate: string;
-    endDate: string;
-  }[];
-  images: string[];
-  thumbnail: string;
-  user: {
-    _id: string;
-    name: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
+import ListingCard from './components/listingCard';
+import { Listing } from './types'; // <--- Crucial: Ensure this is correctly importing the shared Listing type
 
 
 export default function HomePage() {
@@ -46,7 +20,7 @@ export default function HomePage() {
   const [showCitySuggestions, setShowCitySuggestions] = useState<boolean>(false);
   const [isSearchingDestinations, setIsSearchingDestinations] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const listingsPerPage = 20; // 5 rows x 4 columns on desktop
+  const listingsPerPage = 20;
 
   // ── FILTER / SEARCH STATE ──
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -83,7 +57,7 @@ export default function HomePage() {
   const [showFilterModal, setShowFilterModal] = useState<boolean>(false);
 
   // ── LISTINGS STATE ──
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]); // This Listing type now correctly points to types/index.ts
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,23 +176,23 @@ export default function HomePage() {
     selectedFeatures,
   ]);
 
- const fetchListings = useCallback(async () => {
-  try {
-    setLoading(true);
-    const qs = buildQueryString();
-    const url = `${API_BASE_URL}/api/listing${qs ? `?${qs}` : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    setListings(data);
-    setError(null);
-    setCurrentPage(1); // optional reset on new fetch
-  } catch (err: any) {
-    setError(err.message || 'Failed to fetch listings');
-  } finally {
-    setLoading(false);
-  }
-}, [API_BASE_URL, buildQueryString]);
+  const fetchListings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const qs = buildQueryString();
+      const url = `${API_BASE_URL}/api/listing${qs ? `?${qs}` : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setListings(data);
+      setError(null);
+      setCurrentPage(1);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch listings');
+    } finally {
+      setLoading(false);
+    }
+  }, [API_BASE_URL, buildQueryString]);
 
 
   useEffect(() => {
@@ -247,21 +221,9 @@ export default function HomePage() {
     fetchListings();
   };
 
-  const handleAmenityChange = (amenity: string) => {
-    setSelectedAmenities(prev =>
-      prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
-    );
-  };
-
-  const handleFeatureChange = (feature: string) => {
-    setSelectedFeatures(prev =>
-      prev.includes(feature) ? prev.filter(f => f !== feature) : [...prev, feature]
-    );
-  };
-
   const indexOfLastListing = currentPage * listingsPerPage;
-const indexOfFirstListing = indexOfLastListing - listingsPerPage;
-const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
+  const indexOfFirstListing = indexOfLastListing - listingsPerPage;
+  const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
 
 
   return (
@@ -296,10 +258,8 @@ const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12">
           {currentListings.map((listing) => (
-            <ListingCard key={listing._id} listing={listing} />
+            <ListingCard key={listing._id} listing={listing} /> // This is now correctly typed
           ))}
-
-
         </div>
       </div>
       {listings.length > listingsPerPage && (
@@ -336,8 +296,8 @@ const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
 
         selectedListingType={selectedListingType}
         setSelectedListingType={setSelectedListingType}
-        bedroomOnly={bedroomOnly}
-        setBedroomOnly={setBedroomOnly}
+        bedroomOnly={bedroomOnly} // Now correctly passed
+        setBedroomOnly={setBedroomOnly} // Now correctly passed
 
         liveWithFamily={liveWithFamily}
         setLiveWithFamily={setLiveWithFamily}
@@ -360,7 +320,7 @@ const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
         allFeatures={allFeatures}
 
         fetchListings={fetchListings}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={setSearchQuery} // Now correctly passed
       />
     </div>
   );

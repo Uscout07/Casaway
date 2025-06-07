@@ -1,9 +1,11 @@
-// components/FilterModal.tsx
+// app/components/filterModal.tsx
 'use client';
 import React from 'react';
 import { Icon } from '@iconify/react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+
+type ListingType = '' | 'Single Room' | 'Whole Apartment' | 'Whole House';
 
 interface Props {
   showFilterModal: boolean;
@@ -17,10 +19,11 @@ interface Props {
   endDate: Date | null;
   setEndDate: (val: Date | null) => void;
 
-  selectedListingType: '' | 'Single Room' | 'Whole Apartment' | 'Whole House';
-  setSelectedListingType: (val: '' | 'Single Room' | 'Whole Apartment' | 'Whole House') => void;
+  selectedListingType: ListingType;
+  setSelectedListingType: (val: ListingType) => void;
+  // ADDED BACK: bedroomOnly with correct type
   bedroomOnly: boolean;
-  setBedroomOnly: (val: boolean) => void;
+  setBedroomOnly: React.Dispatch<React.SetStateAction<boolean>>; // Correct type
 
   liveWithFamily: boolean;
   setLiveWithFamily: (val: boolean) => void;
@@ -32,18 +35,19 @@ interface Props {
   dogsAllowed: boolean;
   setDogsAllowed: (val: boolean) => void;
   catsAllowed: boolean;
-  setCatsAllowed: (val: boolean) => void;
+  setCatsAllowed: React.Dispatch<React.SetStateAction<boolean>>;
 
   selectedAmenities: string[];
-  setSelectedAmenities: (vals: string[]) => void;
+  setSelectedAmenities: React.Dispatch<React.SetStateAction<string[]>>;
   allAmenities: string[];
 
   selectedFeatures: string[];
-  setSelectedFeatures: (vals: string[]) => void;
+  setSelectedFeatures: React.Dispatch<React.SetStateAction<string[]>>;
   allFeatures: string[];
 
   fetchListings: () => void;
-  setSearchQuery: (val: string) => void;
+  // ADDED BACK: setSearchQuery with correct type
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>; // Correct type
 }
 
 const FilterModal: React.FC<Props> = ({
@@ -60,8 +64,8 @@ const FilterModal: React.FC<Props> = ({
 
   selectedListingType,
   setSelectedListingType,
-  bedroomOnly,
-  setBedroomOnly,
+  bedroomOnly, // Ensure destructuring
+  setBedroomOnly, // Ensure destructuring
 
   liveWithFamily,
   setLiveWithFamily,
@@ -84,17 +88,17 @@ const FilterModal: React.FC<Props> = ({
   allFeatures,
 
   fetchListings,
-  setSearchQuery,
+  setSearchQuery, // Ensure destructuring
 }) => {
   if (!showFilterModal) return null;
 
   const resetFilters = () => {
-    setSearchQuery('');
+    setSearchQuery(''); // Correctly called now that setSearchQuery is a prop
     setDestinationInput('');
     setStartDate(null);
     setEndDate(null);
     setSelectedListingType('');
-    setBedroomOnly(false);
+    setBedroomOnly(false); // Reset bedroomOnly
     setLiveWithFamily(false);
     setWomenOnly(false);
     setPetsAllowed(false);
@@ -125,6 +129,7 @@ const FilterModal: React.FC<Props> = ({
             type="button"
             onClick={() => setShowFilterModal(false)}
             className="text-gray-500 hover:text-gray-800"
+            aria-label="Close filters"
           >
             <Icon icon="material-symbols:close" className="w-8 h-8" />
           </button>
@@ -133,8 +138,8 @@ const FilterModal: React.FC<Props> = ({
         {/* Dates & Duration */}
         <div className="mb-6">
           <h3 className="text-xl font-semibold mb-3">Dates & Duration</h3>
-          <div className="flex space-x-4 mb-3">
-            <div>
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-3">
+            <div className="w-full sm:w-1/2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
               <DatePicker
                 selected={startDate}
@@ -143,11 +148,11 @@ const FilterModal: React.FC<Props> = ({
                 startDate={startDate}
                 endDate={endDate}
                 placeholderText="Select start date"
-                className="p-2 border border-gray-300 rounded-md w-full"
+                className="p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-forest focus:border-transparent"
                 dateFormat="yyyy/MM/dd"
               />
             </div>
-            <div>
+            <div className="w-full sm:w-1/2">
               <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
               <DatePicker
                 selected={endDate}
@@ -157,13 +162,13 @@ const FilterModal: React.FC<Props> = ({
                 endDate={endDate}
                 minDate={startDate || undefined}
                 placeholderText="Select end date"
-                className="p-2 border border-gray-300 rounded-md w-full"
+                className="p-2 border border-gray-300 rounded-md w-full focus:ring-2 focus:ring-forest focus:border-transparent"
                 dateFormat="yyyy/MM/dd"
               />
             </div>
           </div>
           {startDate && endDate && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mt-2">
               Duration: {Math.abs((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))} days
             </p>
           )}
@@ -184,7 +189,6 @@ const FilterModal: React.FC<Props> = ({
             </button>
             <button
               type="button"
-
               className={`px-4 py-2 rounded-full border ${
                 selectedListingType === 'Single Room' ? 'bg-forest text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-100'
               }`}
@@ -211,93 +215,101 @@ const FilterModal: React.FC<Props> = ({
               Whole House
             </button>
           </div>
-          
+
+          <div className="mt-4">
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                checked={bedroomOnly}
+                onChange={(e) => setBedroomOnly(e.target.checked)}
+              />
+              <span className="ml-2 text-gray-700">Show only bedrooms</span>
+            </label>
+          </div>
         </div>
 
-{/* Roommate Preferences — Only show for 'Single Room' AND bedroomOnly checked */}
-{selectedListingType === 'Single Room' && (
-  <div className="mb-6">
-    <h3 className="text-xl font-semibold mb-3">Roommate Preferences</h3>
-    <div className="flex flex-col space-y-2">
-      <label className="inline-flex items-center">
-        <input
-          type="checkbox"
-          className="form-checkbox"
-          checked={liveWithFamily}
-          onChange={(e) => setLiveWithFamily(e.target.checked)}
-        />
-        <span className="ml-2 text-gray-700">Live with Family</span>
-      </label>
-      <label className="inline-flex items-center">
-        <input
-          type="checkbox"
-          className="form-checkbox"
-          checked={womenOnly}
-          onChange={(e) => setWomenOnly(e.target.checked)}
-        />
-        <span className="ml-2 text-gray-700">Roomates</span>
-      </label>
-    </div>
-  </div>
-)}
+        {/* Roommate Preferences — Only show for 'Single Room' */}
+        {selectedListingType === 'Single Room' && (
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold mb-3">Roommate Preferences</h3>
+            <div className="flex flex-col space-y-2">
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                  checked={liveWithFamily}
+                  onChange={(e) => setLiveWithFamily(e.target.checked)}
+                />
+                <span className="ml-2 text-gray-700">Live with Family</span>
+              </label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                  checked={womenOnly}
+                  onChange={(e) => setWomenOnly(e.target.checked)}
+                />
+                <span className="ml-2 text-gray-700">Women Only Roommates</span>
+              </label>
+            </div>
+          </div>
+        )}
 
+        {/* Pet Preferences */}
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-3">Pet Compatibility</h3>
+          <div className="flex flex-col space-y-2">
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                checked={petsAllowed}
+                onChange={(e) => {
+                  setPetsAllowed(e.target.checked);
+                  if (!e.target.checked) {
+                    setDogsAllowed(false);
+                    setCatsAllowed(false);
+                  }
+                }}
+              />
+              <span className="ml-2 text-gray-700">Are you okay living with pets?</span>
+            </label>
 
-
-{/* Pet Preferences */}
-<div className="mb-6">
-  <h3 className="text-xl font-semibold mb-3">Pet Compatibility</h3>
-  <div className="flex flex-col space-y-2">
-    <label className="inline-flex items-center">
-      <input
-        type="checkbox"
-        className="form-checkbox"
-        checked={petsAllowed}
-        onChange={(e) => {
-          setPetsAllowed(e.target.checked);
-          if (!e.target.checked) {
-            setDogsAllowed(false);
-            setCatsAllowed(false);
-          }
-        }}
-      />
-      <span className="ml-2 text-gray-700">Are you okay living with pets?</span>
-    </label>
-
-    {petsAllowed && (
-      <div className="ml-4 space-y-2">
-        <label className="inline-flex items-center">
-          <input
-            type="checkbox"
-            className="form-checkbox"
-            checked={dogsAllowed}
-            onChange={(e) => setDogsAllowed(e.target.checked)}
-          />
-          <span className="ml-2 text-gray-700">Dogs</span>
-        </label>
-        <label className="inline-flex items-center">
-          <input
-            type="checkbox"
-            className="form-checkbox"
-            checked={catsAllowed}
-            onChange={(e) => setCatsAllowed(e.target.checked)}
-          />
-          <span className="ml-2 text-gray-700">Cats</span>
-        </label>
-      </div>
-    )}
-  </div>
-</div>
-
+            {petsAllowed && (
+              <div className="ml-6 space-y-2">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                    checked={dogsAllowed}
+                    onChange={(e) => setDogsAllowed(e.target.checked)}
+                  />
+                  <span className="ml-2 text-gray-700">Dogs</span>
+                </label>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
+                    checked={catsAllowed}
+                    onChange={(e) => setCatsAllowed(e.target.checked)}
+                  />
+                  <span className="ml-2 text-gray-700">Cats</span>
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Amenities */}
         <div className="mb-6">
           <h3 className="text-xl font-semibold mb-3">Listing Facilities (Amenities)</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {allAmenities.map((amenity) => (
-              <label key={amenity} className="inline-flex items-center">
+              <label key={amenity} className="inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  className="form-checkbox"
+                  className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
                   checked={selectedAmenities.includes(amenity)}
                   onChange={() => handleAmenityChange(amenity)}
                 />
@@ -312,10 +324,10 @@ const FilterModal: React.FC<Props> = ({
           <h3 className="text-xl font-semibold mb-3">Features & Views</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {allFeatures.map((feature) => (
-              <label key={feature} className="inline-flex items-center">
+              <label key={feature} className="inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  className="form-checkbox"
+                  className="form-checkbox h-5 w-5 text-forest rounded focus:ring-forest"
                   checked={selectedFeatures.includes(feature)}
                   onChange={() => handleFeatureChange(feature)}
                 />
@@ -340,9 +352,6 @@ const FilterModal: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => {
-              if (destinationInput) {
-                setSearchQuery(destinationInput);
-              }
               fetchListings();
               setShowFilterModal(false);
             }}

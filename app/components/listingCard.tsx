@@ -1,32 +1,12 @@
+// app/components/listingCard.tsx
+'use client';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import Link from 'next/link';
-// import Image from 'next/image'; // Remove this line if not using next/image
-
-// Ensure Listing interface is up-to-date with backend
-interface Listing {
-    _id: string;
-    title: string;
-    details: string;
-    type: 'Single Room' | 'Whole Apartment' | 'Whole House';
-    amenities: string[];
-    city: string;
-    country: string;
-    roommates: string[];
-    tags: string[];
-    availability: string[];
-    images: string[];
-    thumbnail: string;
-    user: {
-        _id: string;
-        name: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-}
+import { Listing } from '../types'; // Make sure this path is correct based on your file structure
 
 interface ListingCardProps {
-    listing: Listing;
+    listing: Listing; // This `Listing` must be the one imported from `../types`
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
@@ -36,12 +16,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
 
     useEffect(() => {
-        // Implement logic to get loggedInUserId (e.g., from context, local storage)
         const token = localStorage.getItem('token');
         if (token) {
-            // In a real app, you'd verify/decode the token or fetch /api/users/me
-            // For now, a placeholder:
-            const tempUserId = "mock-logged-in-user-id"; // Replace with actual logic
+            const tempUserId = "mock-logged-in-user-id";
             setLoggedInUserId(tempUserId);
         }
 
@@ -70,8 +47,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     }, [listing._id, API_BASE_URL, loggedInUserId]);
 
     const handleLikeToggle = async (e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent navigating to listing detail page
-        e.stopPropagation(); // Stop event propagation
+        e.preventDefault();
+        e.stopPropagation();
 
         if (!loggedInUserId) {
             alert('Please log in to like listings.');
@@ -100,6 +77,21 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         }
     };
 
+    const formatAvailability = (availability: { startDate: string; endDate: string }[]) => {
+      if (!availability || availability.length === 0) return 'No dates specified';
+      const firstPeriod = availability[0];
+      // Handle potential invalid dates from backend
+      try {
+        const start = new Date(firstPeriod.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const end = new Date(firstPeriod.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `${start} - ${end}`;
+      } catch (e) {
+        console.error("Error parsing availability dates:", e);
+        return "Invalid Dates";
+      }
+    };
+
+
     return (
         <Link href={`/listing/${listing._id}`} passHref>
             <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer h-full flex flex-col">
@@ -107,9 +99,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                     <img
                         src={listing.thumbnail || listing.images?.[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600'}
                         alt={listing.title}
-                        // Add explicit width and height for the img tag
-                        width={300} // **Example width, adjust based on your design**
-                        height={192} // **Example height (h-48 -> 192px), adjust based on your design**
+                        width={300}
+                        height={192}
                         className="rounded-t-xl object-cover w-full h-full"
                     />
                 </div>
@@ -120,34 +111,39 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         <span>{listing.city}, {listing.country}</span>
                     </div>
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex space-x-2">
-                            <Icon icon="material-symbols:calendar-today-outline" className="w-5 h-5 text-gray-400" />
-                            <Icon icon="material-symbols:door-open-outline" className="w-5 h-5 text-gray-400" />
+                        <div className="flex space-x-2 text-gray-500 text-sm">
+                            <span className="flex items-center">
+                                <Icon icon="material-symbols:calendar-today-outline" className="w-4 h-4 mr-1" />
+                                {formatAvailability(listing.availability)}
+                            </span>
+                           
                         </div>
                         <div className="flex space-x-2">
-                            {/* Like Button for Listing Card */}
                             <button aria-label="Favorite listing" onClick={handleLikeToggle} className="p-1 rounded-full hover:bg-gray-100">
                                 <Icon
                                     icon={isLiked ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
                                     className={`w-5 h-5 transition-colors ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
                                 />
                             </button>
-                            {likesCount > 0 && <span className="text-sm text-gray-600">{likesCount}</span>} {/* Display likes count */}
+                            {likesCount > 0 && <span className="text-sm text-gray-600">{likesCount}</span>}
                         </div>
                     </div>
-                    <div className="flex justify-between items-end mt-auto">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                            {listing.type}
-                        </span>
-                        <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                            {listing.tags.includes('live-with-family')
-                                ? 'Live with Family'
-                                : listing.tags.includes('women-only')
-                                ? 'Women Only'
-                                : listing.type === 'Single Room'
-                                ? 'Private Room'
-                                : 'Entire Place'}
-                        </span>
+                    <div className="flex flex-wrap gap-2 justify-end items-end mt-auto">
+                        {listing.type && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                                {listing.type}
+                            </span>
+                        )}
+                        {listing.tags.includes('live-with-family') && (
+                            <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                Live with Family
+                            </span>
+                        )}
+                        {listing.tags.includes('women-only') && (
+                            <span className="px-3 py-1 bg-pink-100 text-pink-700 text-xs rounded-full">
+                                Women Only
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>

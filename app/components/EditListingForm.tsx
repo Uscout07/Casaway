@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 // Removed useRouter and useSearchParams as it's no longer a standalone page
 
+interface AvailabilityPeriod {
+    startDate: string; // Will be ISO string like "YYYY-MM-DD" from date input
+    endDate: string;   // Will be ISO string like "YYYY-MM-DD" from date input
+}
 // Define the Listing type based on your Mongoose schema
 interface Listing {
     _id: string;
@@ -15,7 +19,7 @@ interface Listing {
     country: string;
     roommates: string[];
     tags: string[];
-    availability: string[]; // ISO date strings
+    availability: AvailabilityPeriod[]; // ISO date strings
     images: string[];
     thumbnail: string;
     status: 'draft' | 'published';
@@ -149,32 +153,27 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
     const handleAvailabilityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number, field: 'startDate' | 'endDate') => {
         const newAvailability = [...(formData.availability || [])];
-        // Ensure the array has enough space for the current period
-        if (newAvailability.length <= index * 2 + (field === 'startDate' ? 0 : 1)) {
-            for (let i = newAvailability.length; i <= index * 2 + (field === 'startDate' ? 0 : 1); i++) {
-                newAvailability.push('');
-            }
+
+        // Ensure the array has an object at this index
+        if (!newAvailability[index]) {
+            newAvailability[index] = { startDate: '', endDate: '' };
         }
 
-        if (field === 'startDate') {
-            newAvailability[index * 2] = e.target.value; // Assuming startDate is at even index
-        } else {
-            newAvailability[index * 2 + 1] = e.target.value; // Assuming endDate is at odd index
-        }
+        newAvailability[index][field] = e.target.value;
+
         setFormData(prev => ({ ...prev, availability: newAvailability }));
     };
-
     const addAvailabilityPeriod = () => {
         setFormData(prev => ({
             ...prev,
-            availability: [...(prev.availability || []), '', ''], // Add two empty strings for start and end
+            availability: [...(prev.availability || []), { startDate: '', endDate: '' }], // Add a new object
         }));
     };
 
     const removeAvailabilityPeriod = (index: number) => {
         setFormData(prev => ({
             ...prev,
-            availability: (prev.availability || []).filter((_, i) => i !== index * 2 && i !== index * 2 + 1),
+            availability: (prev.availability || []).filter((_, i) => i !== index),
         }));
     };
 
@@ -449,18 +448,18 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
                 <div>
                     <h3 className="text-2xl font-semibold text-forest mb-4">Availability</h3>
                     {/* Ensure formData.availability is an array and has even length for pairs */}
-                    {(formData.availability || []).filter((_, i) => i % 2 === 0).map((_startDate, index) => (
+                    {(formData.availability || []).map((period, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
                             <input
                                 type="date"
-                                value={formData.availability?.[index * 2] || ''}
+                                value={period.startDate || ''}
                                 onChange={(e) => handleAvailabilityChange(e, index, 'startDate')}
                                 className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
                             />
                             <span className="text-gray-600">-</span>
                             <input
                                 type="date"
-                                value={formData.availability?.[index * 2 + 1] || ''}
+                                value={period.endDate || ''}
                                 onChange={(e) => handleAvailabilityChange(e, index, 'endDate')}
                                 className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
                             />
