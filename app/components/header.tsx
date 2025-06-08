@@ -78,7 +78,6 @@ export default function NavBar() {
   return (
     <header className="px-6 py-6 w-screen fixed flex-1 flex items-center justify-between top-0 z-50 font-inter bg-ambient h-[9vh]">
       <div className="w-full mx-auto flex items-center justify-between px-20">
-        {/* Logo - not typically loaded with a loading state, as it's static */}
         <Image className="w-[32px] h-[32px]" src="/logo.png" alt={"Logo"} />
 
         <nav className="flex space-x-16 items-center">
@@ -101,12 +100,12 @@ export default function NavBar() {
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
-            >
-              <img
+            >{ user?.profilePic != "" ?
+              (<img
                 src={user?.profilePic}
                 alt="Profile"
                 className="w-full h-full object-cover"
-              />
+              />) : (<Icon icon="mdi:account-circle" className="w-full h-full text-gray-500" />)}
             </button>
           )}
 
