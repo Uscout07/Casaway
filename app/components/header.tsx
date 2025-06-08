@@ -15,14 +15,19 @@ interface User {
 export default function NavBar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // New loading state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token) {
+        setLoading(false); // No token, so not loading user data
+        return;
+      }
 
+      setLoading(true); // Start loading
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
           headers: {
@@ -30,12 +35,14 @@ export default function NavBar() {
           },
         });
 
-        if (!res.ok) return;
+        if (!res.ok) {
+          setUser(null); // Clear user if fetch failed
+          return;
+        }
 
         const data = await res.json();
         console.log("Fetched user data:", data);
 
-        // Ensure _id is string and exists
         const userData = {
           ...data,
           _id: data._id?.toString() || data.id?.toString() || "",
@@ -44,6 +51,9 @@ export default function NavBar() {
         setUser(userData);
       } catch (error) {
         console.error("Error fetching user:", error);
+        setUser(null); // Clear user on error
+      } finally {
+        setLoading(false); // End loading regardless of success or failure
       }
     };
 
@@ -68,6 +78,7 @@ export default function NavBar() {
   return (
     <header className="px-6 py-6 w-screen fixed flex-1 flex items-center justify-between top-0 z-50 font-inter bg-ambient h-[9vh]">
       <div className="w-full mx-auto flex items-center justify-between px-20">
+        {/* Logo - not typically loaded with a loading state, as it's static */}
         <Image className="w-[32px] h-[32px]" src="/logo.png" alt={"Logo"} />
 
         <nav className="flex space-x-16 items-center">
@@ -79,18 +90,27 @@ export default function NavBar() {
         </nav>
 
         <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
-          >
-            <Image
-              src={user?.profilePic || "/default-avatar.png"}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          </button>
+          {loading ? (
+            // Loading state for profile picture
+            <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-forest-medium animate-pulse">
+              {/* You can add a subtle shimmer effect here */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-forest-medium to-transparent opacity-0 animate-shimmer"></div>
+            </div>
+          ) : (
+            // User data loaded, show profile picture
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
+            >
+              <img
+                src={user?.profilePic}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </button>
+          )}
 
-          {dropdownOpen && (
+          {dropdownOpen && !loading && ( // Only show dropdown if not loading and user is loaded
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
               <button
                 onClick={() => {
