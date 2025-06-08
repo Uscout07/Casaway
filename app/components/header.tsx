@@ -24,7 +24,7 @@ export default function NavBar() {
       if (!token) return;
 
       try {
-        const res = await fetch("/api/users/me", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
