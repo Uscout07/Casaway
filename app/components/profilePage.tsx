@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
+import { ListingCardSkeleton } from './listingCard';
 
 interface User {
     _id: string;
