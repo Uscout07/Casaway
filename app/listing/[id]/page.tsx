@@ -1,11 +1,10 @@
-// app/page.tsx
 'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
 import Link from 'next/link';
 
-// Interfaces (assuming these are defined in a separate types file, e.g., types/index.ts)
+// Interfaces
 interface User {
     _id: string;
     name: string;
@@ -38,14 +37,15 @@ interface Comment {
     _id: string;
     user: User;
     text: string;
-    likes: string[];  // Make sure this is always initialized as an array                
     createdAt: string;
     parentCommentId?: string;
     parentComment?: string | Comment;
     replies?: Comment[];
+    // NEW for likes
+    isLikedByUser?: boolean;
+    likesCount?: number;
 }
 
-// --- NEW: ListingDetailSkeleton Component ---
 const ListingDetailSkeleton: React.FC = () => {
     return (
         <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter pb-12 animate-pulse">
@@ -147,7 +147,6 @@ const ListingDetailSkeleton: React.FC = () => {
         </div>
     );
 };
-// --- END NEW COMPONENT ---
 
 
 const ListingDetailPage: React.FC = () => {
@@ -187,6 +186,7 @@ const ListingDetailPage: React.FC = () => {
         const fetchListingData = async () => {
             setLoading(true);
             try {
+                // Fetch listing data
                 const listingRes = await fetch(`${API_BASE_URL}/api/listing/${listingId}`);
                 if (!listingRes.ok) {
                     if (listingRes.status === 404) {
@@ -198,75 +198,6 @@ const ListingDetailPage: React.FC = () => {
                 const data: Listing = await listingRes.json();
                 setListing(data);
                 setMainImage(data.images[0] || data.thumbnail);
-
-                const commentsRes = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`);
-                if (!commentsRes.ok) throw new Error('Failed to fetch comments');
-                const flatComments: Comment[] = await commentsRes.json();
-                const token = localStorage.getItem('token');
-                 if (token && flatComments.length > 0) {
-                    const commentLikeStatuses = await Promise.all(
-                        flatComments.map(async (comment) => {
-                            try {
-                                const statusRes = await fetch(`${API_BASE_URL}/api/likes/status/comment/${comment._id}`, {
-                                    headers: { 'Authorization': `Bearer ${token}` }
-                                });
-                                if (statusRes.ok) {
-                                    const statusData = await statusRes.json();
-                                    return { commentId: comment._id, isLiked: statusData.isLiked };
-                                }
-                            } catch (err) {
-                                console.error('Error fetching comment like status:', err);
-                            }
-                            return { commentId: comment._id, isLiked: false };
-                        })
-                    );
-
-                    // Update comments with like status - this ensures proper initial state
-                    const commentsWithInitialLikeState = flatComments.map(comment => {
-                        const likeStatus = commentLikeStatuses.find(status => status.commentId === comment._id);
-                        return {
-                            ...comment,
-                            likes: comment.likes || [], // Ensure likes is always an array
-                            // You can add a isLikedByCurrentUser field if needed for UI optimization
-                        };
-                    });
-
-                    const nestedComments = buildNestedComments(commentsWithInitialLikeState);
-                    setComments(nestedComments);
-                } else {
-                    const commentsWithLikes = flatComments.map(comment => ({
-                        ...comment,
-                        likes: comment.likes || []
-                    }));
-                    const nestedComments = buildNestedComments(commentsWithLikes);
-                    setComments(nestedComments);
-                }
-                const nestedComments = buildNestedComments(flatComments);
-                setComments(nestedComments);
-
-                // Fetch like status if user is logged in (for listing)
-
-                if (token) {
-                    const likeStatusRes = await fetch(`${API_BASE_URL}/api/likes/status/${listingId}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (likeStatusRes.ok) {
-                        const statusData = await likeStatusRes.json();
-                        setIsLiked(statusData.isLiked && statusData.itemType === 'listing');
-                    }
-                }
-
-                const likesCountRes = await fetch(`${API_BASE_URL}/api/likes/count/listing/${listingId}`);
-                if (likesCountRes.ok) {
-                    const countData = await likesCountRes.json();
-                    setLikesCount(countData.count);
-                }
-
-                const commentsWithLikes = flatComments.map(comment => ({
-                    ...comment,
-                    likes: comment.likes || []
-                }));
-
 
                 setError(null);
             } catch (err) {
@@ -280,11 +211,74 @@ const ListingDetailPage: React.FC = () => {
         fetchListingData();
     }, [listingId, API_BASE_URL]);
 
-    const buildNestedComments = (comments: Comment[]): Comment[] => {
+    // FETCH COMMENTS + LIKE STATUS + LIKE COUNT + NEST
+    useEffect(() => {
+        if (!listingId) return;
+        const token = localStorage.getItem('token') || '';
+
+        (async () => {
+            try {
+                // 1. fetch flat comments
+                const flatRes = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                if (!flatRes.ok) throw new Error('Failed to fetch comments');
+                const flatComments: Comment[] = await flatRes.json();
+
+                // 2. enrich each comment with status+count
+                const flatWithStats = await Promise.all(
+                    flatComments.map(async (c) => {
+                        const [statusRes, countRes] = await Promise.all([
+                            fetch(`${API_BASE_URL}/api/likes/status/comment/${c._id}`, { 
+                                headers: token ? { Authorization: `Bearer ${token}` } : {} 
+                            }).then(r => r.json()).catch(() => ({ isLiked: false })),
+                            fetch(`${API_BASE_URL}/api/likes/count/comment/${c._id}`)
+                                .then(r => r.json()).catch(() => ({ count: 0 })),
+                        ]);
+                        return {
+                            ...c,
+                            isLikedByUser: statusRes.isLiked,
+                            likesCount: countRes.count,
+                        };
+                    })
+                );
+
+                // 3. build nested structure
+                const nested = buildNestedComments(flatWithStats);
+                setComments(nested);
+            } catch (err) {
+                console.error('Error fetching comments:', err);
+            }
+        })();
+    }, [listingId, API_BASE_URL]);
+
+    // FETCH LISTING LIKE STATUS + COUNT
+    useEffect(() => {
+        if (!listingId) return;
+        const token = localStorage.getItem('token') || '';
+
+        (async () => {
+            try {
+                const [statusRes, countRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/likes/status/${listingId}`, { 
+                        headers: token ? { Authorization: `Bearer ${token}` } : {} 
+                    }).then(r => r.json()).catch(() => ({ isLiked: false })),
+                    fetch(`${API_BASE_URL}/api/likes/count/listing/${listingId}`)
+                        .then(r => r.json()).catch(() => ({ count: 0 })),
+                ]);
+                setIsLiked(statusRes.isLiked && statusRes.itemType === 'listing');
+                setLikesCount(countRes.count);
+            } catch (err) {
+                console.error('Error fetching listing likes:', err);
+            }
+        })();
+    }, [listingId, API_BASE_URL]);
+
+    const buildNestedComments = (flatComments: Comment[]): Comment[] => {
         // Check if comments are already nested (backend returns nested structure)
-        if (comments.length > 0 && 'replies' in comments[0] && Array.isArray((comments[0] as any).replies)) {
+        if (flatComments.length > 0 && 'replies' in flatComments[0] && Array.isArray((flatComments[0] as any).replies)) {
             console.log('Comments already nested, returning as-is');
-            return comments;
+            return flatComments;
         }
 
         console.log('Building Instagram-style nested structure from flat array');
@@ -294,12 +288,12 @@ const ListingDetailPage: React.FC = () => {
         const topLevel: (Comment & { replies: Comment[] })[] = [];
 
         // First pass: create map of all comments with empty replies arrays
-        comments.forEach(comment => {
+        flatComments.forEach(comment => {
             commentMap[comment._id] = { ...comment, replies: [] };
         });
 
-        // Second pass: organize into hierarchy (only 2 levels)
-        comments.forEach(comment => {
+        // Second pass: organize into hierarchy (only 2 levels for Instagram-style)
+        flatComments.forEach(comment => {
             const parentId = (comment as any).parentCommentId ||
                 (typeof (comment as any).parentComment === 'string' ? (comment as any).parentComment :
                     (comment as any).parentComment?._id);
@@ -343,8 +337,6 @@ const ListingDetailPage: React.FC = () => {
 
         return topLevel;
     };
-
-
 
     const handleLikeToggle = useCallback(async () => {
         if (!loggedInUserId) {
@@ -398,6 +390,12 @@ const ListingDetailPage: React.FC = () => {
 
             if (res.ok) {
                 const newComment: Comment = await res.json();
+                // Enrich new comment with initial like data
+                const enrichedComment = {
+                    ...newComment,
+                    isLikedByUser: false,
+                    likesCount: 0
+                };
 
                 if (parentId) {
                     // Add reply to the appropriate parent comment
@@ -407,13 +405,13 @@ const ListingDetailPage: React.FC = () => {
                                 // Direct reply to main comment
                                 return {
                                     ...c,
-                                    replies: [...(c.replies || []), newComment]
+                                    replies: [...(c.replies || []), enrichedComment]
                                 };
                             } else if (c.replies && c.replies.some(reply => reply._id === parentId)) {
                                 // Reply to a reply - add to main comment's replies
                                 return {
                                     ...c,
-                                    replies: [...(c.replies || []), newComment]
+                                    replies: [...(c.replies || []), enrichedComment]
                                 };
                             }
                             return c;
@@ -421,7 +419,7 @@ const ListingDetailPage: React.FC = () => {
                     );
                 } else {
                     // Add new top-level comment
-                    setComments(prev => [...prev, { ...newComment, replies: [] }]);
+                    setComments(prev => [...prev, { ...enrichedComment, replies: [] }]);
                 }
             } else {
                 const errorData = await res.json();
@@ -433,6 +431,7 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, API_BASE_URL, listingId]);
 
+    // TOGGLE comment like - Updated with cleaner implementation
     const handleCommentLikeToggle = useCallback(async (commentId: string) => {
         if (!loggedInUserId) {
             alert('Please log in to like comments.');
@@ -440,7 +439,7 @@ const ListingDetailPage: React.FC = () => {
         }
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${API_BASE_URL}/api/likes/toggle/comment/${commentId}`, { // <-- New API endpoint
+            const res = await fetch(`${API_BASE_URL}/api/likes/toggle/comment/${commentId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -451,15 +450,13 @@ const ListingDetailPage: React.FC = () => {
             if (res.ok) {
                 const data = await res.json();
 
-                // Update the comments state to reflect the like change
                 setComments(prevComments => prevComments.map(comment => {
                     // Check if this is a main comment
                     if (comment._id === commentId) {
                         return {
                             ...comment,
-                            likes: data.liked
-                                ? [...(comment.likes || []), loggedInUserId]
-                                : (comment.likes || []).filter(id => id !== loggedInUserId)
+                            isLikedByUser: data.liked,
+                            likesCount: data.likesCount || (data.liked ? (comment.likesCount || 0) + 1 : (comment.likesCount || 0) - 1)
                         };
                     }
 
@@ -471,9 +468,8 @@ const ListingDetailPage: React.FC = () => {
                                 reply._id === commentId
                                     ? {
                                         ...reply,
-                                        likes: data.liked
-                                            ? [...(reply.likes || []), loggedInUserId]
-                                            : (reply.likes || []).filter(id => id !== loggedInUserId)
+                                        isLikedByUser: data.liked,
+                                        likesCount: data.likesCount || (data.liked ? (reply.likesCount || 0) + 1 : (reply.likesCount || 0) - 1)
                                     }
                                     : reply
                             )
@@ -492,8 +488,6 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, API_BASE_URL]);
 
-
-
     const formatAvailability = (dates: string[]) => {
         if (!dates || dates.length === 0) return 'Not specified';
         const sortedDates = dates.map(d => new Date(d)).sort((a, b) => a.getTime() - b.getTime());
@@ -503,8 +497,7 @@ const ListingDetailPage: React.FC = () => {
         return `Available: ${sortedDates[0].toLocaleDateString()} - ${sortedDates[sortedDates.length - 1].toLocaleDateString()}`;
     };
 
-    // Improved CommentItem Component with proper nesting
-    // Updated CommentItem Component with Instagram-style nesting
+    // Updated CommentItem Component with improved like handling
     const CommentItem: React.FC<{
         comment: Comment;
         isReply?: boolean;
@@ -538,9 +531,9 @@ const ListingDetailPage: React.FC = () => {
             }, 0);
         };
 
-        // Check if current user has liked this comment
-        const isLikedByUser = comment.likes && comment.likes.includes(loggedInUserId || '');
-        const likesCount = comment.likes ? comment.likes.length : 0;
+        // Use the new like status from comment object
+        const isLikedByUser = comment.isLikedByUser || false;
+        const likesCount = comment.likesCount || 0;
 
         // Only show replies for main comments (not for replies)
         const repliesToShow = !isReply && comment.replies ?
@@ -592,13 +585,13 @@ const ListingDetailPage: React.FC = () => {
                             <button
                                 onClick={() => handleCommentLikeToggle(comment._id)}
                                 className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                                disabled={!loggedInUserId} // <-- Add this line
+                                disabled={!loggedInUserId}
                             >
                                 <Icon
-                                    icon={isLikedByUser ? "material-symbols:favorite" : "material-symbols:favorite-outline"} // <-- Update icon logic
-                                    className={`${isReply ? 'w-3 h-3' : 'w-4 h-4'} ${isLikedByUser ? 'text-red-500' : ''}`} // <-- Update class logic
+                                    icon={isLikedByUser ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
+                                    className={`${isReply ? 'w-3 h-3' : 'w-4 h-4'} ${isLikedByUser ? 'text-red-500' : ''}`}
                                 />
-                                <span>{likesCount}</span> {/* <-- Update likes count display */}
+                                <span>{likesCount}</span>
                             </button>
                             <button
                                 onClick={handleReplyClick}
@@ -663,7 +656,6 @@ const ListingDetailPage: React.FC = () => {
         );
     };
 
-
     // Updated CommentSection Component
     const CommentSection: React.FC<{
         comments: Comment[];
@@ -717,7 +709,7 @@ const ListingDetailPage: React.FC = () => {
         );
     };
 
-    if (loading) {
+   if (loading) {
         return <ListingDetailSkeleton />; // Render the skeleton while loading
     }
     if (error) {
