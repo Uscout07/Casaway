@@ -11,7 +11,7 @@ const nextConfig = {
     ];
   },
   images: { // <--- Changed from 'Images' to 'images'
-    domains: ['localhost', 'res.cloudinary.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],
+    domains: ['localhost', 'github.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],
   }
 };
 
