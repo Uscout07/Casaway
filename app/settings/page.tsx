@@ -86,6 +86,19 @@ const SettingsPage = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
+            const userData = await response.json();
+            console.log('User data fetched successfully:', userData); // Inspect this
+            console.log('User ID from /me endpoint:', userData._id); // Check this value
+            setUser(userData);
+            // ...
+        } else {
+            console.error('Failed to fetch user data:', response.statusText);
+            // If response is not OK, inspect the errorData if available
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Error fetching user data details:', errorData);
+        }
+
+      if (response.ok) {
         const userData = await response.json();
         setUser(userData);
         setProfileData({
