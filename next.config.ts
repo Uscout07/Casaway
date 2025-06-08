@@ -1,15 +1,18 @@
 // next.config.js
-module.exports = {
+/** @type {import('next').NextConfig} */ // Add this JSDoc for better type checking
+const nextConfig = {
   generateRobotsTxt: true,
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
+        destination: 'https://casaway-backend.onrender.com/api/:path*',
       },
-
     ];
   },
-  Images: {
-    domains: ['localhost', 'res.cloudinary.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],}
+  images: { // <--- Changed from 'Images' to 'images'
+    domains: ['localhost', 'res.cloudinary.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],
+  }
 };
+
+module.exports = nextConfig;
