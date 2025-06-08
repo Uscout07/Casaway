@@ -5,7 +5,7 @@ import { Icon } from '@iconify/react';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
 import 'react-datepicker/dist/react-datepicker.css';
-import ListingCard from './components/listingCard';
+import ListingCard, { ListingCardSkeleton } from './components/listingCard'; // Import ListingCardSkeleton
 import { Listing } from './types'; // <--- Crucial: Ensure this is correctly importing the shared Listing type
 
 
@@ -59,7 +59,7 @@ export default function HomePage() {
 
   // ── LISTINGS STATE ──
   const [listings, setListings] = useState<Listing[]>([]); // This Listing type now correctly points to types/index.ts
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(true); // Already here, great!
   const [error, setError] = useState<string | null>(null);
 
   // ── DEBOUNCE HELPER ──
@@ -179,7 +179,7 @@ export default function HomePage() {
 
   const fetchListings = useCallback(async () => {
     try {
-      setLoading(true);
+      setLoading(true); // Start loading when fetch begins
       const qs = buildQueryString();
       const url = `${API_BASE_URL}/api/listing${qs ? `?${qs}` : ''}`;
       const res = await fetch(url);
@@ -190,8 +190,9 @@ export default function HomePage() {
       setCurrentPage(1);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch listings');
+      setListings([]); // Clear listings on error
     } finally {
-      setLoading(false);
+      setLoading(false); // End loading when fetch completes (success or error)
     }
   }, [API_BASE_URL, buildQueryString]);
 
@@ -208,7 +209,7 @@ export default function HomePage() {
     setSearchQuery('');
     setShowCountrySuggestions(false);
     setShowCitySuggestions(false);
-    fetchListings();
+    fetchListings(); // Re-fetch listings after selection
   };
 
   const handleSelectCity = (combo: string) => {
@@ -219,12 +220,15 @@ export default function HomePage() {
     setSearchQuery('');
     setShowCitySuggestions(false);
     setShowCountrySuggestions(false);
-    fetchListings();
+    fetchListings(); // Re-fetch listings after selection
   };
 
   const indexOfLastListing = currentPage * listingsPerPage;
   const indexOfFirstListing = indexOfLastListing - listingsPerPage;
   const currentListings = listings.slice(indexOfFirstListing, indexOfLastListing);
+
+  // Determine how many skeleton cards to show
+  const skeletonCount = listingsPerPage; // Show enough skeletons to fill a page
 
 
   return (
@@ -248,8 +252,22 @@ export default function HomePage() {
       />
 
       <div className="px-6">
-        {loading && <p>Loading...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500 text-center py-12">{error}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12">
+          {loading ? (
+            // Render skeleton cards while loading
+            Array.from({ length: skeletonCount }).map((_, index) => (
+              <ListingCardSkeleton key={index} />
+            ))
+          ) : (
+            // Render actual listings once loaded
+            currentListings.map((listing) => (
+              <ListingCard key={listing._id} listing={listing} />
+            ))
+          )}
+        </div>
+
         {!loading && !error && listings.length === 0 && (
           <div className="text-center py-12 font-inter">
             <Icon icon="material-symbols:home-outline" className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -257,13 +275,10 @@ export default function HomePage() {
             <p className="text-gray-600">Adjust your search filters or try a different destination.</p>
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12">
-          {currentListings.map((listing) => (
-            <ListingCard key={listing._id} listing={listing} /> // This is now correctly typed
-          ))}
-        </div>
       </div>
-      {listings.length > listingsPerPage && (
+
+      {/* Pagination only shown if not loading and there are listings */}
+      {!loading && listings.length > listingsPerPage && (
         <div className="flex justify-center items-center gap-4 mt-6">
           <button
             disabled={currentPage === 1}
@@ -288,7 +303,9 @@ export default function HomePage() {
         setShowFilterModal={setShowFilterModal}
 
         destinationInput={destinationInput}
-        setDestinationInput={setDestinationInput}
+        setDestinationInput={val => {
+          setDestinationInput(val);
+        }}
 
         startDate={startDate}
         setStartDate={setStartDate}
@@ -297,8 +314,8 @@ export default function HomePage() {
 
         selectedListingType={selectedListingType}
         setSelectedListingType={setSelectedListingType}
-        bedroomOnly={bedroomOnly} // Now correctly passed
-        setBedroomOnly={setBedroomOnly} // Now correctly passed
+        bedroomOnly={bedroomOnly}
+        setBedroomOnly={setBedroomOnly}
 
         liveWithFamily={liveWithFamily}
         setLiveWithFamily={setLiveWithFamily}
@@ -321,7 +338,7 @@ export default function HomePage() {
         allFeatures={allFeatures}
 
         fetchListings={fetchListings}
-        setSearchQuery={setSearchQuery} // Now correctly passed
+        setSearchQuery={setSearchQuery}
       />
     </div>
   );

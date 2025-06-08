@@ -9,6 +9,38 @@ interface ListingCardProps {
     listing: Listing; // This `Listing` must be the one imported from `../types`
 }
 
+// --- NEW: ListingCardSkeleton Component ---
+export const ListingCardSkeleton: React.FC = () => {
+    return (
+        <div className="bg-white rounded-xl shadow-sm h-full flex flex-col overflow-hidden animate-pulse">
+            {/* Image Placeholder */}
+            <div className="relative flex-shrink-0 w-full h-48 rounded-t-xl bg-gray-300 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent opacity-0 animate-shimmer"></div>
+            </div>
+            <div className="p-4 flex flex-col flex-grow">
+                {/* Title Placeholder */}
+                <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+                {/* Location Placeholder */}
+                <div className="flex items-center text-gray-600 text-sm mb-2">
+                    <div className="w-4 h-4 bg-gray-300 rounded mr-1"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                </div>
+                {/* Date & Like Placeholder */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                    <div className="h-6 bg-gray-300 rounded-full w-6"></div> {/* For the like button */}
+                </div>
+                {/* Tags Placeholder */}
+                <div className="flex flex-wrap gap-2 justify-end items-end mt-auto">
+                    <div className="h-6 bg-gray-300 rounded-full w-1/4"></div>
+                    <div className="h-6 bg-gray-300 rounded-full w-1/5"></div>
+                </div>
+            </div>
+        </div>
+    );
+};
+// --- END NEW COMPONENT ---
+
 const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     const [isLiked, setIsLiked] = useState(false);
@@ -18,6 +50,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
+            // NOTE: Using a mock ID here. In a real app, you'd decode the token or fetch user ID from an auth endpoint.
             const tempUserId = "mock-logged-in-user-id";
             setLoggedInUserId(tempUserId);
         }
@@ -91,7 +124,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
       }
     };
 
-
     return (
         <Link href={`/listing/${listing._id}`} passHref>
             <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer h-full flex flex-col">
@@ -116,7 +148,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                                 <Icon icon="material-symbols:calendar-today-outline" className="w-4 h-4 mr-1" />
                                 {formatAvailability(listing.availability)}
                             </span>
-                           
+
                         </div>
                         <div className="flex space-x-2">
                             <button aria-label="Favorite listing" onClick={handleLikeToggle} className="p-1 rounded-full hover:bg-gray-100">
