@@ -246,37 +246,50 @@ const SettingsPage = () => {
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrors({}); // Clear previous errors
+  e.preventDefault();
+  setLoading(true);
+  setErrors({}); // Clear previous errors
 
-    try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(profileData)
-      });
-
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUser(updatedUser);
-        alert('Profile updated successfully!');
-      } else {
-        const errorData = await response.json();
-        setErrors(errorData.errors || { general: errorData.msg || 'Failed to update profile.' });
-      }
-    } catch (error) {
-      setErrors({ general: 'Network error or unexpected issue.' });
-      console.error('Error updating profile:', error);
-    } finally {
-      setLoading(false);
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+        // Handle not logged in case, e.g., redirect to login or show an error
+        setErrors({ general: 'Authentication token not found. Please log in again.' });
+        setLoading(false);
+        return;
     }
-  };
 
+    // --- FIX APPLIED HERE ---
+    // Changed the URL from '/api/users/me' to '/api/users/edit'
+    // Changed the method from 'PUT' to 'PATCH'
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/edit`, {
+      method: 'PATCH', // Use PATCH for partial updates to the authenticated user's profile
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(profileData) // profileData should contain the fields you want to update
+    });
+    // --- END FIX ---
+
+    if (response.ok) {
+      const updatedUser = await response.json();
+      setUser(updatedUser);
+      alert('Profile updated successfully!');
+      // Optionally, you might want to refresh fetchUserData here if needed
+      // fetchUserData();
+    } else {
+      const errorData = await response.json();
+      setErrors(errorData.errors || { general: errorData.msg || 'Failed to update profile.' });
+      console.error('Profile update failed:', errorData);
+    }
+  } catch (error) {
+    setErrors({ general: 'Network error or unexpected issue.' });
+    console.error('Error updating profile:', error);
+  } finally {
+    setLoading(false);
+  }
+};
   // Callback from UserListingsSection to initiate edit
   const handleEditListing = (id: string) => {
     setEditingListingId(id);
