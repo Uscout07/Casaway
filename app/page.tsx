@@ -4,12 +4,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
+import { useParams, useRouter } from 'next/navigation';
 import 'react-datepicker/dist/react-datepicker.css';
 import ListingCard, { ListingCardSkeleton } from './components/listingCard'; // Import ListingCardSkeleton
 import { Listing } from './types'; // <--- Crucial: Ensure this is correctly importing the shared Listing type
 
 
 export default function HomePage() {
+  const router = useRouter();
   const API_BASE_URL = "https://casaway-backend.onrender.com";
 
 
@@ -61,6 +63,7 @@ export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]); // This Listing type now correctly points to types/index.ts
   const [loading, setLoading] = useState<boolean>(true); // Already here, great!
   const [error, setError] = useState<string | null>(null);
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
 
   // ── DEBOUNCE HELPER ──
   const debounce = (fn: (...args: any[]) => void, delay: number) => {
@@ -102,6 +105,18 @@ export default function HomePage() {
     }, 300),
     [API_BASE_URL]
   );
+
+   // Set logged in user - only runs once, and handle redirection
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            const tempUserId = "mock-logged-in-user-id";
+            setLoggedInUserId(tempUserId);
+        } else {
+            // Redirect to /auth if no token is found
+            router.push('/auth');
+        }
+    }, [router]); // Add router to dependency array
 
   useEffect(() => {
     if (destinationInput.length > 1) {
