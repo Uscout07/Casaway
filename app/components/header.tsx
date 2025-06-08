@@ -100,7 +100,7 @@ export default function NavBar() {
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
-            >{ user?.profilePic != "" ?
+            >{ user?.profilePic !== "" && user?.profilePic !== null ?
               (<img
                 src={user?.profilePic}
                 alt="Profile"
