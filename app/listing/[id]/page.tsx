@@ -38,12 +38,11 @@ interface Comment {
     _id: string;
     user: User;
     text: string;
-    likes: string[];  // Make sure this is always initialized as an array
+    likes: string[];  // Make sure this is always initialized as an array                
     createdAt: string;
-    parentCommentId?: string; // ID of the direct parent comment
-    parentComment?: string | Comment; // Could be ID or populated object
-    topLevelParentId?: string; // NEW: ID of the top-level comment (for Instagram style)
-    replies?: Comment[]; // Only for top-level comments in our new structure
+    parentCommentId?: string;
+    parentComment?: string | Comment;
+    replies?: Comment[];
 }
 
 // --- NEW: ListingDetailSkeleton Component ---
@@ -172,8 +171,6 @@ const ListingDetailPage: React.FC = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            // In a real application, you'd decode the token to get the actual user ID
-            // For now, we'll use a mock ID or fetch it from a user endpoint
             const tempUserId = "mock-logged-in-user-id";
             setLoggedInUserId(tempUserId);
         }
@@ -190,7 +187,6 @@ const ListingDetailPage: React.FC = () => {
         const fetchListingData = async () => {
             setLoading(true);
             try {
-                // Fetch Listing
                 const listingRes = await fetch(`${API_BASE_URL}/api/listing/${listingId}`);
                 if (!listingRes.ok) {
                     if (listingRes.status === 404) {
@@ -203,21 +199,53 @@ const ListingDetailPage: React.FC = () => {
                 setListing(data);
                 setMainImage(data.images[0] || data.thumbnail);
 
-                // Fetch Comments
                 const commentsRes = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`);
                 if (!commentsRes.ok) throw new Error('Failed to fetch comments');
                 const flatComments: Comment[] = await commentsRes.json();
+                const token = localStorage.getItem('token');
+                 if (token && flatComments.length > 0) {
+                    const commentLikeStatuses = await Promise.all(
+                        flatComments.map(async (comment) => {
+                            try {
+                                const statusRes = await fetch(`${API_BASE_URL}/api/likes/status/comment/${comment._id}`, {
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (statusRes.ok) {
+                                    const statusData = await statusRes.json();
+                                    return { commentId: comment._id, isLiked: statusData.isLiked };
+                                }
+                            } catch (err) {
+                                console.error('Error fetching comment like status:', err);
+                            }
+                            return { commentId: comment._id, isLiked: false };
+                        })
+                    );
 
-                // Process comments to ensure 'likes' array is present and then build nested structure
-                const commentsWithInitialState = flatComments.map(comment => ({
-                    ...comment,
-                    likes: comment.likes || [] // Ensure likes is always an array
-                }));
-                const nestedComments = buildNestedComments(commentsWithInitialState);
+                    // Update comments with like status - this ensures proper initial state
+                    const commentsWithInitialLikeState = flatComments.map(comment => {
+                        const likeStatus = commentLikeStatuses.find(status => status.commentId === comment._id);
+                        return {
+                            ...comment,
+                            likes: comment.likes || [], // Ensure likes is always an array
+                            // You can add a isLikedByCurrentUser field if needed for UI optimization
+                        };
+                    });
+
+                    const nestedComments = buildNestedComments(commentsWithInitialLikeState);
+                    setComments(nestedComments);
+                } else {
+                    const commentsWithLikes = flatComments.map(comment => ({
+                        ...comment,
+                        likes: comment.likes || []
+                    }));
+                    const nestedComments = buildNestedComments(commentsWithLikes);
+                    setComments(nestedComments);
+                }
+                const nestedComments = buildNestedComments(flatComments);
                 setComments(nestedComments);
 
                 // Fetch like status if user is logged in (for listing)
-                const token = localStorage.getItem('token');
+
                 if (token) {
                     const likeStatusRes = await fetch(`${API_BASE_URL}/api/likes/status/${listingId}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -228,16 +256,21 @@ const ListingDetailPage: React.FC = () => {
                     }
                 }
 
-                // Fetch likes count for the listing
                 const likesCountRes = await fetch(`${API_BASE_URL}/api/likes/count/listing/${listingId}`);
                 if (likesCountRes.ok) {
                     const countData = await likesCountRes.json();
                     setLikesCount(countData.count);
                 }
 
+                const commentsWithLikes = flatComments.map(comment => ({
+                    ...comment,
+                    likes: comment.likes || []
+                }));
+
+
                 setError(null);
             } catch (err) {
-                console.error('Error fetching listing or comments:', err);
+                console.error('Error fetching listing:', err);
                 setError(err instanceof Error ? err.message : 'Failed to load listing.');
             } finally {
                 setLoading(false);
@@ -247,81 +280,70 @@ const ListingDetailPage: React.FC = () => {
         fetchListingData();
     }, [listingId, API_BASE_URL]);
 
-    // Refined buildNestedComments function for Instagram-style flat replies
     const buildNestedComments = (comments: Comment[]): Comment[] => {
+        // Check if comments are already nested (backend returns nested structure)
+        if (comments.length > 0 && 'replies' in comments[0] && Array.isArray((comments[0] as any).replies)) {
+            console.log('Comments already nested, returning as-is');
+            return comments;
+        }
+
+        console.log('Building Instagram-style nested structure from flat array');
+
+        // Create a map of all comments
         const commentMap: { [key: string]: Comment & { replies: Comment[] } } = {};
-        const topLevelComments: (Comment & { replies: Comment[] })[] = [];
+        const topLevel: (Comment & { replies: Comment[] })[] = [];
 
-        // First pass: Initialize all comments in the map and identify top-level comments
+        // First pass: create map of all comments with empty replies arrays
         comments.forEach(comment => {
-            commentMap[comment._id] = { ...comment, replies: [] }; // Ensure replies array exists
-            // Determine top-level parent ID
-            const parentId = (comment as any).parentCommentId ||
-                             (typeof (comment as any).parentComment === 'string' ? (comment as any).parentComment :
-                                 (comment as any).parentComment?._id);
-
-            // If there's no direct parent or the parent is not in the map (e.g., initial top-level comment)
-            // or if it's explicitly marked as top-level by the backend.
-            if (!parentId || !commentMap[parentId]) {
-                topLevelComments.push(commentMap[comment._id]);
-            }
+            commentMap[comment._id] = { ...comment, replies: [] };
         });
 
-        // Second pass: Organize comments into their top-level parents' replies array
+        // Second pass: organize into hierarchy (only 2 levels)
         comments.forEach(comment => {
             const parentId = (comment as any).parentCommentId ||
-                             (typeof (comment as any).parentComment === 'string' ? (comment as any).parentComment :
-                                 (comment as any).parentComment?._id);
+                (typeof (comment as any).parentComment === 'string' ? (comment as any).parentComment :
+                    (comment as any).parentComment?._id);
 
             if (parentId && commentMap[parentId]) {
-                // Find the ultimate top-level parent of the current comment
-                let currentParent = commentMap[parentId];
-                let topLevelParentId = currentParent.topLevelParentId || currentParent._id; // Use new topLevelParentId if available
+                // This is a reply - add to parent's replies
+                // For Instagram-style, all replies go to the main comment level
+                let mainParent = commentMap[parentId];
 
-                // Traverse up the chain if needed to find the actual top-level parent
-                while (currentParent && ((currentParent as any).parentCommentId || (typeof (currentParent as any).parentComment === 'string' ? (currentParent as any).parentComment : (currentParent as any).parentComment?._id))) {
-                    const nextParentId = (currentParent as any).parentCommentId ||
-                                         (typeof (currentParent as any).parentComment === 'string' ? (currentParent as any).parentComment :
-                                             (currentParent as any).parentComment?._id);
-                    if (commentMap[nextParentId]) {
-                        currentParent = commentMap[nextParentId];
-                        topLevelParentId = currentParent._id;
-                    } else {
-                        break; // Parent not found in map, assume currentParent is top-level
+                // If the parent is also a reply, find the main parent
+                const parentParentId = (commentMap[parentId] as any).parentCommentId ||
+                    (typeof (commentMap[parentId] as any).parentComment === 'string' ?
+                        (commentMap[parentId] as any).parentComment :
+                        (commentMap[parentId] as any).parentComment?._id);
+
+                if (parentParentId && commentMap[parentParentId]) {
+                    // Parent is a reply, so add this reply to the main parent
+                    mainParent = commentMap[parentParentId];
+                    // Add @username to the reply text if it's not already there
+                    const replyingToUsername = commentMap[parentId].user.username;
+                    if (!commentMap[comment._id].text.startsWith(`@${replyingToUsername}`)) {
+                        commentMap[comment._id].text = `@${replyingToUsername} ${commentMap[comment._id].text}`;
                     }
                 }
 
-                // Assign the topLevelParentId to the current comment for easier access
-                commentMap[comment._id].topLevelParentId = topLevelParentId;
-
-                // Add to the replies array of the determined top-level parent
-                if (commentMap[topLevelParentId]) {
-                    // Add @username prefix to the reply text if it's a reply to another comment/reply
-                    if (comment._id !== topLevelParentId && commentMap[parentId] && commentMap[parentId].user) {
-                        const replyingToUsername = commentMap[parentId].user.username;
-                        if (!commentMap[comment._id].text.startsWith(`@${replyingToUsername}`)) {
-                            commentMap[comment._id].text = `@${replyingToUsername} ${commentMap[comment._id].text}`;
-                        }
-                    }
-                    commentMap[topLevelParentId].replies.push(commentMap[comment._id]);
-                }
+                mainParent.replies.push(commentMap[comment._id]);
+            } else if (!parentId || parentId === null) {
+                // This is a top-level comment
+                topLevel.push(commentMap[comment._id]);
             }
         });
 
-        // Filter out comments that are now nested as replies and sort replies
-        const finalTopLevelComments = topLevelComments.filter(comment =>
-            !comment.topLevelParentId || comment.topLevelParentId === comment._id
-        ).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); // Sort main comments by creation date
-
-        finalTopLevelComments.forEach(comment => {
-            // Sort replies within each top-level comment
-            comment.replies.sort((a, b) =>
-                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            );
+        // Sort replies by creation date (oldest first, like Instagram)
+        topLevel.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+                comment.replies.sort((a, b) =>
+                    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                );
+            }
         });
 
-        return finalTopLevelComments;
+        return topLevel;
     };
+
 
 
     const handleLikeToggle = useCallback(async () => {
@@ -352,8 +374,8 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, API_BASE_URL, listingId]);
 
-    // Refined handleAddComment
-    const handleAddComment = useCallback(async (text: string, directParentCommentId: string | null = null) => {
+    // Improved handleAddComment with proper nested comment handling
+    const handleAddComment = useCallback(async (text: string, parentId: string | null = null) => {
         if (!loggedInUserId) {
             alert('Please log in to comment.');
             return;
@@ -361,35 +383,6 @@ const ListingDetailPage: React.FC = () => {
         if (!text.trim()) return;
 
         const token = localStorage.getItem('token');
-
-        // Determine the ultimate top-level parent ID for the new comment/reply
-        let ultimateTopLevelParentId: string | null = null;
-        let repliedToUsername: string | null = null;
-
-        if (directParentCommentId) {
-            // Find the direct parent comment from current state
-            const directParentComment = comments.reduce((found: Comment | null, mainComment) => {
-                if (mainComment._id === directParentCommentId) return mainComment;
-                return mainComment.replies?.find(reply => reply._id === directParentCommentId) || found;
-            }, null);
-
-            if (directParentComment) {
-                ultimateTopLevelParentId = directParentComment.topLevelParentId || directParentComment._id;
-                repliedToUsername = directParentComment.user.username;
-            } else {
-                // Fallback: If direct parent not found in local state, assume directParentCommentId is the top-level parent
-                ultimateTopLevelParentId = directParentCommentId;
-            }
-        }
-
-
-        let commentTextToSend = text.trim();
-        // If it's a reply and the text doesn't already start with @username, prepend it
-        if (directParentCommentId && repliedToUsername && !commentTextToSend.startsWith(`@${repliedToUsername}`)) {
-            commentTextToSend = `@${repliedToUsername} ${commentTextToSend}`;
-        }
-
-
         try {
             const res = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`, {
                 method: 'POST',
@@ -398,30 +391,38 @@ const ListingDetailPage: React.FC = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    text: commentTextToSend, // Send the potentially modified text
-                    parentCommentId: directParentCommentId, // This is the direct parent for the backend
+                    text: text.trim(),
+                    parentCommentId: parentId,
                 }),
             });
 
             if (res.ok) {
                 const newComment: Comment = await res.json();
-                // Ensure newComment has a likes array
-                newComment.likes = newComment.likes || [];
 
-                // Re-fetch comments to get the updated, properly structured list from the backend
-                // This is simpler than trying to manually re-nest and update the state accurately
-                const commentsRes = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`);
-                if (!commentsRes.ok) throw new Error('Failed to re-fetch comments after adding');
-                const flatComments: Comment[] = await commentsRes.json();
-                const commentsWithInitialState = flatComments.map(comment => ({
-                    ...comment,
-                    likes: comment.likes || [] // Ensure likes is always an array
-                }));
-                const nestedComments = buildNestedComments(commentsWithInitialState);
-                setComments(nestedComments);
-
-                // Clear input field if available
-                if (commentInputRef.current) commentInputRef.current.value = '';
+                if (parentId) {
+                    // Add reply to the appropriate parent comment
+                    setComments(prevComments =>
+                        prevComments.map(c => {
+                            if (c._id === parentId) {
+                                // Direct reply to main comment
+                                return {
+                                    ...c,
+                                    replies: [...(c.replies || []), newComment]
+                                };
+                            } else if (c.replies && c.replies.some(reply => reply._id === parentId)) {
+                                // Reply to a reply - add to main comment's replies
+                                return {
+                                    ...c,
+                                    replies: [...(c.replies || []), newComment]
+                                };
+                            }
+                            return c;
+                        })
+                    );
+                } else {
+                    // Add new top-level comment
+                    setComments(prev => [...prev, { ...newComment, replies: [] }]);
+                }
             } else {
                 const errorData = await res.json();
                 alert(errorData.msg || 'Failed to add comment');
@@ -430,8 +431,7 @@ const ListingDetailPage: React.FC = () => {
             console.error('Failed to add comment:', err);
             alert('An unexpected error occurred.');
         }
-    }, [loggedInUserId, API_BASE_URL, listingId, comments, buildNestedComments]); // Added comments and buildNestedComments to dependency array
-
+    }, [loggedInUserId, API_BASE_URL, listingId]);
 
     const handleCommentLikeToggle = useCallback(async (commentId: string) => {
         if (!loggedInUserId) {
@@ -453,7 +453,7 @@ const ListingDetailPage: React.FC = () => {
 
                 // Update the comments state to reflect the like change
                 setComments(prevComments => prevComments.map(comment => {
-                    // Check if this is the main comment being liked/unliked
+                    // Check if this is a main comment
                     if (comment._id === commentId) {
                         return {
                             ...comment,
@@ -463,7 +463,7 @@ const ListingDetailPage: React.FC = () => {
                         };
                     }
 
-                    // Check if the liked/unliked item is a reply within this main comment's replies
+                    // Check if this is a reply within any main comment
                     if (comment.replies && comment.replies.length > 0) {
                         return {
                             ...comment,
@@ -503,70 +503,162 @@ const ListingDetailPage: React.FC = () => {
         return `Available: ${sortedDates[0].toLocaleDateString()} - ${sortedDates[sortedDates.length - 1].toLocaleDateString()}`;
     };
 
+    // Improved CommentItem Component with proper nesting
     // Updated CommentItem Component with Instagram-style nesting
     const CommentItem: React.FC<{
         comment: Comment;
-        isReply?: boolean; // This prop is now primarily for styling indentation
-        onReplyClick: (commentId: string, username: string) => void;
-        loggedInUserId: string | null;
-        handleCommentLikeToggle: (commentId: string) => void;
-    }> = ({ comment, isReply = false, onReplyClick, loggedInUserId, handleCommentLikeToggle }) => {
+        isReply?: boolean;
+    }> = ({ comment, isReply = false }) => {
+        const [showReplyInput, setShowReplyInput] = useState(false);
+        const [showMoreReplies, setShowMoreReplies] = useState(false);
+        const [visibleRepliesCount, setVisibleRepliesCount] = useState(3);
+        const replyInputRef = useRef<HTMLInputElement>(null);
+
+        const handleReplySubmit = () => {
+            const value = replyInputRef.current?.value.trim();
+            if (value) {
+                const finalText = isReply ? value : value;
+                const parentId = isReply ? comment.parentCommentId || comment._id : comment._id;
+
+                handleAddComment(finalText, parentId);
+                if (replyInputRef.current) replyInputRef.current.value = '';
+                setShowReplyInput(false);
+            }
+        };
+
+        const handleReplyClick = () => {
+            setShowReplyInput(true);
+            setTimeout(() => {
+                if (replyInputRef.current) {
+                    const prefix = isReply ? `@${comment.user.username} ` : '';
+                    replyInputRef.current.value = prefix;
+                    replyInputRef.current.focus();
+                    replyInputRef.current.setSelectionRange(prefix.length, prefix.length);
+                }
+            }, 0);
+        };
 
         // Check if current user has liked this comment
         const isLikedByUser = comment.likes && comment.likes.includes(loggedInUserId || '');
         const likesCount = comment.likes ? comment.likes.length : 0;
 
+        // Only show replies for main comments (not for replies)
+        const repliesToShow = !isReply && comment.replies ?
+            comment.replies.slice(0, visibleRepliesCount) : [];
+
+        const hasMoreReplies = !isReply && comment.replies &&
+            comment.replies.length > visibleRepliesCount;
+
+        const hiddenRepliesCount = !isReply && comment.replies ?
+            comment.replies.length - visibleRepliesCount : 0;
+
+        const loadMoreReplies = () => {
+            setVisibleRepliesCount(prev => prev + 6);
+        };
+
         return (
-            <div className={`flex items-start space-x-3 mb-6 ${isReply ? 'ml-12' : 'border-b border-gray-100 pb-4'}`}>
-                <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full overflow-hidden flex-shrink-0`}>
-                    {comment.user.profilePic ? (
-                        <img
-                            src={comment.user.profilePic}
-                            alt={comment.user.name}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                            <Icon icon="material-symbols:person-outline" className={`${isReply ? 'w-4 h-4' : 'w-6 h-6'} text-gray-600`} />
-                        </div>
-                    )}
-                </div>
-                <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                        <h4 className={`font-semibold text-gray-900 ${isReply ? 'text-sm' : 'text-base'}`}>
-                            {comment.user.name}
-                        </h4>
-                        <span className={`text-gray-500 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                            @{comment.user.username}
-                        </span>
-                        <span className={`text-gray-400 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                    </div>
-                    <p className={`text-gray-700 mb-2 ${isReply ? 'text-sm' : 'text-base'}`}>
-                        {comment.text}
-                    </p>
-                    <div className={`flex items-center space-x-4 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                        <button
-                            onClick={() => handleCommentLikeToggle(comment._id)}
-                            className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                            disabled={!loggedInUserId}
-                        >
-                            <Icon
-                                icon={isLikedByUser ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
-                                className={`${isReply ? 'w-3 h-3' : 'w-4 h-4'} ${isLikedByUser ? 'text-red-500' : ''}`}
+            <div className={`${isReply ? 'ml-12' : 'mb-6'} ${!isReply ? 'border-b border-gray-100 pb-4' : 'mb-3'}`}>
+                {/* Comment/Reply Content */}
+                <div className="flex items-start space-x-3">
+                    <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full overflow-hidden flex-shrink-0`}>
+                        {comment.user.profilePic ? (
+                            <img
+                                src={comment.user.profilePic}
+                                alt={comment.user.name}
+                                className="w-full h-full object-cover"
                             />
-                            <span>{likesCount}</span>
-                        </button>
-                        <button
-                            onClick={() => onReplyClick(comment._id, comment.user.username)}
-                            className="text-gray-500 hover:text-forest transition-colors font-medium"
-                            disabled={!loggedInUserId}
-                        >
-                            Reply
-                        </button>
+                        ) : (
+                            <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                                <Icon icon="material-symbols:person-outline" className={`${isReply ? 'w-4 h-4' : 'w-6 h-6'} text-gray-600`} />
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                            <h4 className={`font-semibold text-gray-900 ${isReply ? 'text-sm' : 'text-base'}`}>
+                                {comment.user.name}
+                            </h4>
+                            <span className={`text-gray-500 ${isReply ? 'text-xs' : 'text-sm'}`}>
+                                @{comment.user.username}
+                            </span>
+                            <span className={`text-gray-400 ${isReply ? 'text-xs' : 'text-sm'}`}>
+                                {new Date(comment.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
+                        <p className={`text-gray-700 mb-2 ${isReply ? 'text-sm' : 'text-base'}`}>
+                            {comment.text}
+                        </p>
+                        <div className={`flex items-center space-x-4 ${isReply ? 'text-xs' : 'text-sm'}`}>
+                            <button
+                                onClick={() => handleCommentLikeToggle(comment._id)}
+                                className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
+                                disabled={!loggedInUserId} // <-- Add this line
+                            >
+                                <Icon
+                                    icon={isLikedByUser ? "material-symbols:favorite" : "material-symbols:favorite-outline"} // <-- Update icon logic
+                                    className={`${isReply ? 'w-3 h-3' : 'w-4 h-4'} ${isLikedByUser ? 'text-red-500' : ''}`} // <-- Update class logic
+                                />
+                                <span>{likesCount}</span> {/* <-- Update likes count display */}
+                            </button>
+                            <button
+                                onClick={handleReplyClick}
+                                className="text-gray-500 hover:text-forest transition-colors font-medium"
+                                disabled={!loggedInUserId}
+                            >
+                                Reply
+                            </button>
+                        </div>
+
+                        {/* Reply Input */}
+                        {showReplyInput && (
+                            <div className="flex gap-2 mt-3">
+                                <input
+                                    ref={replyInputRef}
+                                    className={`border border-gray-300 px-3 py-2 rounded-lg ${isReply ? 'text-xs' : 'text-sm'} flex-1 focus:ring-forest focus:border-forest`}
+                                    placeholder="Write a reply..."
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleReplySubmit();
+                                        }
+                                    }}
+                                />
+                                <button
+                                    onClick={handleReplySubmit}
+                                    className={`${isReply ? 'text-xs' : 'text-sm'} bg-forest text-white px-3 py-2 rounded-lg hover:bg-teal-800 transition-colors`}
+                                >
+                                    Reply
+                                </button>
+                                <button
+                                    onClick={() => setShowReplyInput(false)}
+                                    className={`${isReply ? 'text-xs' : 'text-sm'} text-gray-500 px-3 py-2 hover:text-gray-700 transition-colors`}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Replies Section - Only for main comments */}
+                {!isReply && comment.replies && comment.replies.length > 0 && (
+                    <div className="mt-4">
+                        {/* Show More Replies Button - if there are hidden replies */}
+                        {hasMoreReplies && (
+                            <button
+                                onClick={loadMoreReplies}
+                                className="text-gray-500 hover:text-gray-700 text-sm font-medium mb-3 ml-12"
+                            >
+                                ── View {Math.min(6, hiddenRepliesCount)} more {hiddenRepliesCount === 1 ? 'reply' : 'replies'}
+                            </button>
+                        )}
+
+                        {/* Render visible replies */}
+                        {repliesToShow.map(reply => (
+                            <CommentItem key={reply._id} comment={reply} isReply={true} />
+                        ))}
+                    </div>
+                )}
             </div>
         );
     };
@@ -576,32 +668,16 @@ const ListingDetailPage: React.FC = () => {
     const CommentSection: React.FC<{
         comments: Comment[];
         handleAddComment: (text: string, parentId: string | null) => void;
-        handleCommentLikeToggle: (commentId: string) => void;
-        loggedInUserId: string | null;
-    }> = ({ comments, handleAddComment, handleCommentLikeToggle, loggedInUserId }) => {
+    }> = ({ comments, handleAddComment }) => {
         const commentInputRef = useRef<HTMLInputElement>(null);
-        const [replyingTo, setReplyingTo] = useState<{ id: string, username: string } | null>(null);
 
         const handleSubmit = () => {
             const val = commentInputRef.current?.value.trim();
             if (val) {
-                handleAddComment(val, replyingTo ? replyingTo.id : null);
+                handleAddComment(val, null);
                 if (commentInputRef.current) commentInputRef.current.value = '';
-                setReplyingTo(null); // Clear replying state
             }
         };
-
-        const handleCommentItemReplyClick = useCallback((commentId: string, username: string) => {
-            setReplyingTo({ id: commentId, username: username });
-            setTimeout(() => {
-                if (commentInputRef.current) {
-                    commentInputRef.current.value = `@${username} `;
-                    commentInputRef.current.focus();
-                    commentInputRef.current.setSelectionRange(username.length + 2, username.length + 2);
-                }
-            }, 0);
-        }, []);
-
 
         const totalCommentsCount = comments.length + comments.reduce((acc, comment) => acc + (comment.replies?.length || 0), 0);
 
@@ -615,7 +691,7 @@ const ListingDetailPage: React.FC = () => {
                         ref={commentInputRef}
                         type="text"
                         className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-forest focus:border-forest"
-                        placeholder={replyingTo ? `Replying to @${replyingTo.username}...` : "Add a comment..."}
+                        placeholder="Add a comment..."
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
@@ -623,21 +699,9 @@ const ListingDetailPage: React.FC = () => {
                             }
                         }}
                     />
-                    {replyingTo && (
-                        <button
-                            onClick={() => {
-                                setReplyingTo(null);
-                                if (commentInputRef.current) commentInputRef.current.value = '';
-                            }}
-                            className="text-gray-500 px-3 py-2 rounded-lg hover:text-gray-700 transition-colors text-sm"
-                        >
-                            Cancel Reply
-                        </button>
-                    )}
                     <button
                         onClick={handleSubmit}
                         className="bg-forest text-white px-5 py-2 rounded-lg font-medium hover:bg-teal-800 transition-colors"
-                        disabled={!loggedInUserId}
                     >
                         Post
                     </button>
@@ -646,34 +710,12 @@ const ListingDetailPage: React.FC = () => {
                     <p className="text-gray-500 text-center py-6">No comments yet. Be the first to comment!</p>
                 ) : (
                     comments.map(comment => (
-                        <React.Fragment key={comment._id}>
-                            <CommentItem
-                                comment={comment}
-                                onReplyClick={handleCommentItemReplyClick}
-                                loggedInUserId={loggedInUserId}
-                                handleCommentLikeToggle={handleCommentLikeToggle}
-                            />
-                            {comment.replies && comment.replies.length > 0 && (
-                                <div className="mt-4">
-                                    {comment.replies.map(reply => (
-                                        <CommentItem
-                                            key={reply._id}
-                                            comment={reply}
-                                            isReply={true}
-                                            onReplyClick={handleCommentItemReplyClick}
-                                            loggedInUserId={loggedInUserId}
-                                            handleCommentLikeToggle={handleCommentLikeToggle}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </React.Fragment>
+                        <CommentItem key={comment._id} comment={comment} />
                     ))
                 )}
             </div>
         );
     };
-
 
     if (loading) {
         return <ListingDetailSkeleton />; // Render the skeleton while loading
@@ -797,8 +839,6 @@ const ListingDetailPage: React.FC = () => {
                         <CommentSection
                             comments={comments}
                             handleAddComment={handleAddComment}
-                            handleCommentLikeToggle={handleCommentLikeToggle}
-                            loggedInUserId={loggedInUserId}
                         />
                     </div>
 
