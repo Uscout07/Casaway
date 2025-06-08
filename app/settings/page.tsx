@@ -71,51 +71,43 @@ const SettingsPage = () => {
     }
   }, [activeTab, user?._id, editingListingId]); // Re-fetch when activeTab or userId changes, or editing state changes
 
-  const fetchUserData = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      if (!token) {
-        // Handle not logged in case, e.g., redirect to login
-        console.warn('No token found, user not logged in.');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-            const userData = await response.json();
-            console.log('User data fetched successfully:', userData); // Inspect this
-            console.log('User ID from /me endpoint:', userData._id); // Check this value
-            setUser(userData);
-            // ...
-        } else {
-            console.error('Failed to fetch user data:', response.statusText);
-            // If response is not OK, inspect the errorData if available
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Error fetching user data details:', errorData);
-        }
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        setProfileData({
-          name: userData.name || '',
-          phone: userData.phone || '',
-          profilePic: userData.profilePic || ''
-        });
-      } else {
-        console.error('Failed to fetch user data:', response.statusText);
-        // Handle error, e.g., clear token, redirect to login
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    } finally {
+const fetchUserData = async () => {
+  setLoading(true);
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      console.warn('No token found, user not logged in.');
       setLoading(false);
+      return;
     }
-  };
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      const userData = await response.json();
+      console.log('User data fetched successfully:', userData);
+      console.log('User ID from /me endpoint:', userData._id);
+
+      setUser(userData);
+      setProfileData({
+        name: userData.name || '',
+        phone: userData.phone || '',
+        profilePic: userData.profilePic || ''
+      });
+
+    } else {
+      console.error('Failed to fetch user data:', response.statusText);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Error fetching user data details:', errorData);
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchListings = async () => {
     if (!user?._id) return; // Ensure user ID exists before fetching
