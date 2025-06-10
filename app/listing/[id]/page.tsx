@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ListingDetailSkeleton from '../listingDetailsSkeleton';
 import ListingGallery from '../postGallery';
 import ListingDetailsCard from '../listingCard';
-import ProfileHeader from '../profileHeader';
+import ProfileHeader from '../HostCard';
 import CommentSection from '../commentSection';
 
 // Import interfaces

@@ -1,14 +1,14 @@
-// components/ProfileHeader.tsx
+// components/hostCard.tsx
 import React from 'react';
 import Link from 'next/link';
 import { Icon } from '@iconify/react';
 import { User } from './listingPageTypes'; // Assuming you create a types.ts file
 
-interface ProfileHeaderProps {
+interface HostCardProps {
     user: User;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
+const HostCard: React.FC<HostCardProps> = ({ user }) => {
     return (
         <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-md h-fit sticky top-28">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Meet your Host</h2>
@@ -52,4 +52,4 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ user }) => {
     );
 };
 
-export default ProfileHeader;
+export default HostCard;
