@@ -1,152 +1,17 @@
+// app/listing/[id]/page.tsx
 'use client';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Icon } from '@iconify/react';
-import Link from 'next/link';
 
-// Interfaces
-interface User {
-    _id: string;
-    name: string;
-    username: string;
-    profilePic?: string;
-}
+// Import components
+import ListingDetailSkeleton from '../listingDetailsSkeleton';
+import ListingGallery from '../postGallery';
+import ListingDetailsCard from '../listingCard';
+import ProfileHeader from '../profileHeader';
+import CommentSection from '../commentSection';
 
-interface Listing {
-    _id: string;
-    user: User;
-    title: string;
-    details: string;
-    type: 'Single Room' | 'Whole Apartment' | 'Whole House';
-    amenities: string[];
-    city: string;
-    country: string;
-    roommates: string[];
-    tags: string[];
-    availability: string[];
-    images: string[];
-    thumbnail: string;
-    status: 'draft' | 'published';
-    createdAt: string;
-    updatedAt: string;
-    likesCount: number;
-    commentsCount: number;
-}
-
-interface Comment {
-    _id: string;
-    user: User;
-    text: string;
-    createdAt: string;
-    parentCommentId?: string;
-    parentComment?: string | Comment;
-    replies?: Comment[];
-    // NEW for likes
-    isLikedByUser?: boolean;
-    likesCount?: number;
-}
-
-const ListingDetailSkeleton: React.FC = () => {
-    return (
-        <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter pb-12 animate-pulse">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Gallery Section Skeleton */}
-                <div className="mb-8">
-                    <div className="w-full h-[500px] rounded-xl bg-gray-300 shadow-lg mb-4 relative overflow-hidden">
-                        {/* Shimmer effect for main image */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent opacity-0 animate-shimmer"></div>
-                    </div>
-                    <div className="flex flex-wrap gap-4 justify-center">
-                        {Array.from({ length: 4 }).map((_, index) => (
-                            <div key={index} className="w-24 h-24 rounded-lg bg-gray-300 border-2 border-gray-200 relative overflow-hidden">
-                                {/* Shimmer effect for thumbnails */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent opacity-0 animate-shimmer"></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Listing Details and Host Info Skeleton */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-white p-8 rounded-xl shadow-md">
-                        {/* Title */}
-                        <div className="h-9 bg-gray-300 rounded w-3/4 mb-4"></div>
-                        {/* Location */}
-                        <div className="h-6 bg-gray-300 rounded w-1/2 mb-6"></div>
-
-                        {/* Property info */}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
-                            <div className="h-5 bg-gray-300 rounded w-1/4"></div>
-                            <div className="h-5 bg-gray-300 rounded w-1/4"></div>
-                            <div className="h-5 bg-gray-300 rounded w-1/4"></div>
-                        </div>
-
-                        {/* Likes and Comments count */}
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="h-6 bg-gray-300 rounded w-24"></div>
-                            <div className="h-6 bg-gray-300 rounded w-28"></div>
-                        </div>
-
-                        <hr className="my-6 border-gray-200" />
-
-                        {/* Description */}
-                        <div className="h-7 bg-gray-300 rounded w-1/3 mb-3"></div>
-                        <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-300 rounded w-11/12 mb-2"></div>
-                        <div className="h-4 bg-gray-300 rounded w-5/6 mb-6"></div>
-
-                        {/* Amenities */}
-                        <div className="h-7 bg-gray-300 rounded w-1/3 mb-3"></div>
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            {Array.from({ length: 4 }).map((_, index) => (
-                                <div key={index} className="h-5 bg-gray-300 rounded w-full"></div>
-                            ))}
-                        </div>
-
-                        {/* Tags/Features */}
-                        <div className="h-7 bg-gray-300 rounded w-1/4 mb-3"></div>
-                        <div className="flex flex-wrap gap-2 mb-6">
-                            <div className="h-6 bg-gray-300 rounded-full w-20"></div>
-                            <div className="h-6 bg-gray-300 rounded-full w-24"></div>
-                        </div>
-
-                        {/* Comments Section Skeleton */}
-                        <hr className="my-6 border-gray-200" />
-                        <div className="h-7 bg-gray-300 rounded w-1/4 mb-4"></div>
-                        <div className="flex gap-2 mb-6">
-                            <div className="flex-1 h-10 bg-gray-300 rounded-lg"></div>
-                            <div className="h-10 w-20 bg-gray-300 rounded-lg"></div>
-                        </div>
-                        {Array.from({ length: 2 }).map((_, index) => (
-                            <div key={index} className="flex items-start space-x-3 mb-6">
-                                <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
-                                <div className="flex-1">
-                                    <div className="h-4 bg-gray-300 rounded w-1/3 mb-2"></div>
-                                    <div className="h-4 bg-gray-300 rounded w-full mb-1"></div>
-                                    <div className="h-4 bg-gray-300 rounded w-2/3"></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Host Card Skeleton */}
-                    <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-md h-fit sticky top-28">
-                        <div className="h-7 bg-gray-300 rounded w-1/2 mb-4"></div>
-                        <div className="flex items-center mb-4">
-                            <div className="w-16 h-16 rounded-full bg-gray-300 mr-4"></div>
-                            <div>
-                                <div className="h-5 bg-gray-300 rounded w-32 mb-1"></div>
-                                <div className="h-4 bg-gray-300 rounded w-24"></div>
-                            </div>
-                        </div>
-                        <div className="h-4 bg-gray-300 rounded w-full mb-4"></div>
-                        <div className="h-12 bg-gray-300 rounded-full w-full"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+// Import interfaces
+import { User, Listing, Comment } from '../listingPageTypes'; // Adjust path if needed
 
 
 const ListingDetailPage: React.FC = () => {
@@ -158,7 +23,6 @@ const ListingDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [mainImage, setMainImage] = useState<string>('');
     const [comments, setComments] = useState<Comment[]>([]);
-    const commentInputRef = useRef<HTMLInputElement>(null);
 
     const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
     const [isLiked, setIsLiked] = useState(false);
@@ -166,16 +30,16 @@ const ListingDetailPage: React.FC = () => {
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Set logged in user - only runs once
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
+            // In a real application, you'd decode the token to get the actual user ID
+            // For now, using a mock ID as in your original code
             const tempUserId = "mock-logged-in-user-id";
             setLoggedInUserId(tempUserId);
         }
     }, []);
 
-    // Main data fetching useEffect
     useEffect(() => {
         if (!listingId) {
             setError('Listing ID is missing.');
@@ -186,7 +50,6 @@ const ListingDetailPage: React.FC = () => {
         const fetchListingData = async () => {
             setLoading(true);
             try {
-                // Fetch listing data
                 const listingRes = await fetch(`${API_BASE_URL}/api/listing/${listingId}`);
                 if (!listingRes.ok) {
                     if (listingRes.status === 404) {
@@ -198,7 +61,6 @@ const ListingDetailPage: React.FC = () => {
                 const data: Listing = await listingRes.json();
                 setListing(data);
                 setMainImage(data.images[0] || data.thumbnail);
-
                 setError(null);
             } catch (err) {
                 console.error('Error fetching listing:', err);
@@ -218,19 +80,17 @@ const ListingDetailPage: React.FC = () => {
 
         (async () => {
             try {
-                // 1. fetch flat comments
                 const flatRes = await fetch(`${API_BASE_URL}/api/comments/listing/${listingId}`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
                 if (!flatRes.ok) throw new Error('Failed to fetch comments');
                 const flatComments: Comment[] = await flatRes.json();
 
-                // 2. enrich each comment with status+count
                 const flatWithStats = await Promise.all(
                     flatComments.map(async (c) => {
                         const [statusRes, countRes] = await Promise.all([
-                            fetch(`${API_BASE_URL}/api/likes/status/comment/${c._id}`, { 
-                                headers: token ? { Authorization: `Bearer ${token}` } : {} 
+                            fetch(`${API_BASE_URL}/api/likes/status/comment/${c._id}`, {
+                                headers: token ? { Authorization: `Bearer ${token}` } : {}
                             }).then(r => r.json()).catch(() => ({ isLiked: false })),
                             fetch(`${API_BASE_URL}/api/likes/count/comment/${c._id}`)
                                 .then(r => r.json()).catch(() => ({ count: 0 })),
@@ -243,7 +103,6 @@ const ListingDetailPage: React.FC = () => {
                     })
                 );
 
-                // 3. build nested structure
                 const nested = buildNestedComments(flatWithStats);
                 setComments(nested);
             } catch (err) {
@@ -260,8 +119,8 @@ const ListingDetailPage: React.FC = () => {
         (async () => {
             try {
                 const [statusRes, countRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/api/likes/status/${listingId}`, { 
-                        headers: token ? { Authorization: `Bearer ${token}` } : {} 
+                    fetch(`${API_BASE_URL}/api/likes/status/${listingId}`, {
+                        headers: token ? { Authorization: `Bearer ${token}` } : {}
                     }).then(r => r.json()).catch(() => ({ isLiked: false })),
                     fetch(`${API_BASE_URL}/api/likes/count/listing/${listingId}`)
                         .then(r => r.json()).catch(() => ({ count: 0 })),
@@ -275,7 +134,6 @@ const ListingDetailPage: React.FC = () => {
     }, [listingId, API_BASE_URL]);
 
     const buildNestedComments = (flatComments: Comment[]): Comment[] => {
-        // Check if comments are already nested (backend returns nested structure)
         if (flatComments.length > 0 && 'replies' in flatComments[0] && Array.isArray((flatComments[0] as any).replies)) {
             console.log('Comments already nested, returning as-is');
             return flatComments;
@@ -283,50 +141,39 @@ const ListingDetailPage: React.FC = () => {
 
         console.log('Building Instagram-style nested structure from flat array');
 
-        // Create a map of all comments
         const commentMap: { [key: string]: Comment & { replies: Comment[] } } = {};
         const topLevel: (Comment & { replies: Comment[] })[] = [];
 
-        // First pass: create map of all comments with empty replies arrays
         flatComments.forEach(comment => {
             commentMap[comment._id] = { ...comment, replies: [] };
         });
 
-        // Second pass: organize into hierarchy (only 2 levels for Instagram-style)
         flatComments.forEach(comment => {
             const parentId = (comment as any).parentCommentId ||
                 (typeof (comment as any).parentComment === 'string' ? (comment as any).parentComment :
                     (comment as any).parentComment?._id);
 
             if (parentId && commentMap[parentId]) {
-                // This is a reply - add to parent's replies
-                // For Instagram-style, all replies go to the main comment level
                 let mainParent = commentMap[parentId];
 
-                // If the parent is also a reply, find the main parent
                 const parentParentId = (commentMap[parentId] as any).parentCommentId ||
                     (typeof (commentMap[parentId] as any).parentComment === 'string' ?
                         (commentMap[parentId] as any).parentComment :
                         (commentMap[parentId] as any).parentComment?._id);
 
                 if (parentParentId && commentMap[parentParentId]) {
-                    // Parent is a reply, so add this reply to the main parent
                     mainParent = commentMap[parentParentId];
-                    // Add @username to the reply text if it's not already there
                     const replyingToUsername = commentMap[parentId].user.username;
                     if (!commentMap[comment._id].text.startsWith(`@${replyingToUsername}`)) {
                         commentMap[comment._id].text = `@${replyingToUsername} ${commentMap[comment._id].text}`;
                     }
                 }
-
                 mainParent.replies.push(commentMap[comment._id]);
             } else if (!parentId || parentId === null) {
-                // This is a top-level comment
                 topLevel.push(commentMap[comment._id]);
             }
         });
 
-        // Sort replies by creation date (oldest first, like Instagram)
         topLevel.forEach(comment => {
             if (comment.replies && comment.replies.length > 0) {
                 comment.replies.sort((a, b) =>
@@ -366,7 +213,6 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, API_BASE_URL, listingId]);
 
-    // Improved handleAddComment with proper nested comment handling
     const handleAddComment = useCallback(async (text: string, parentId: string | null = null) => {
         if (!loggedInUserId) {
             alert('Please log in to comment.');
@@ -390,7 +236,6 @@ const ListingDetailPage: React.FC = () => {
 
             if (res.ok) {
                 const newComment: Comment = await res.json();
-                // Enrich new comment with initial like data
                 const enrichedComment = {
                     ...newComment,
                     isLikedByUser: false,
@@ -398,17 +243,14 @@ const ListingDetailPage: React.FC = () => {
                 };
 
                 if (parentId) {
-                    // Add reply to the appropriate parent comment
                     setComments(prevComments =>
                         prevComments.map(c => {
                             if (c._id === parentId) {
-                                // Direct reply to main comment
                                 return {
                                     ...c,
                                     replies: [...(c.replies || []), enrichedComment]
                                 };
                             } else if (c.replies && c.replies.some(reply => reply._id === parentId)) {
-                                // Reply to a reply - add to main comment's replies
                                 return {
                                     ...c,
                                     replies: [...(c.replies || []), enrichedComment]
@@ -418,7 +260,6 @@ const ListingDetailPage: React.FC = () => {
                         })
                     );
                 } else {
-                    // Add new top-level comment
                     setComments(prev => [...prev, { ...enrichedComment, replies: [] }]);
                 }
             } else {
@@ -431,7 +272,6 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, API_BASE_URL, listingId]);
 
-    // TOGGLE comment like - Updated with cleaner implementation
     const handleCommentLikeToggle = useCallback(async (commentId: string) => {
         if (!loggedInUserId) {
             alert('Please log in to like comments.');
@@ -451,7 +291,6 @@ const ListingDetailPage: React.FC = () => {
                 const data = await res.json();
 
                 setComments(prevComments => prevComments.map(comment => {
-                    // Check if this is a main comment
                     if (comment._id === commentId) {
                         return {
                             ...comment,
@@ -460,7 +299,6 @@ const ListingDetailPage: React.FC = () => {
                         };
                     }
 
-                    // Check if this is a reply within any main comment
                     if (comment.replies && comment.replies.length > 0) {
                         return {
                             ...comment,
@@ -475,7 +313,6 @@ const ListingDetailPage: React.FC = () => {
                             )
                         };
                     }
-
                     return comment;
                 }));
             } else {
@@ -497,220 +334,8 @@ const ListingDetailPage: React.FC = () => {
         return `Available: ${sortedDates[0].toLocaleDateString()} - ${sortedDates[sortedDates.length - 1].toLocaleDateString()}`;
     };
 
-    // Updated CommentItem Component with improved like handling
-    const CommentItem: React.FC<{
-        comment: Comment;
-        isReply?: boolean;
-    }> = ({ comment, isReply = false }) => {
-        const [showReplyInput, setShowReplyInput] = useState(false);
-        const [showMoreReplies, setShowMoreReplies] = useState(false);
-        const [visibleRepliesCount, setVisibleRepliesCount] = useState(3);
-        const replyInputRef = useRef<HTMLInputElement>(null);
-
-        const handleReplySubmit = () => {
-            const value = replyInputRef.current?.value.trim();
-            if (value) {
-                const finalText = isReply ? value : value;
-                const parentId = isReply ? comment.parentCommentId || comment._id : comment._id;
-
-                handleAddComment(finalText, parentId);
-                if (replyInputRef.current) replyInputRef.current.value = '';
-                setShowReplyInput(false);
-            }
-        };
-
-        const handleReplyClick = () => {
-            setShowReplyInput(true);
-            setTimeout(() => {
-                if (replyInputRef.current) {
-                    const prefix = isReply ? `@${comment.user.username} ` : '';
-                    replyInputRef.current.value = prefix;
-                    replyInputRef.current.focus();
-                    replyInputRef.current.setSelectionRange(prefix.length, prefix.length);
-                }
-            }, 0);
-        };
-
-        // Use the new like status from comment object
-        const isLikedByUser = comment.isLikedByUser || false;
-        const likesCount = comment.likesCount || 0;
-
-        // Only show replies for main comments (not for replies)
-        const repliesToShow = !isReply && comment.replies ?
-            comment.replies.slice(0, visibleRepliesCount) : [];
-
-        const hasMoreReplies = !isReply && comment.replies &&
-            comment.replies.length > visibleRepliesCount;
-
-        const hiddenRepliesCount = !isReply && comment.replies ?
-            comment.replies.length - visibleRepliesCount : 0;
-
-        const loadMoreReplies = () => {
-            setVisibleRepliesCount(prev => prev + 6);
-        };
-
-        return (
-            <div className={`${isReply ? 'ml-12' : 'mb-6'} ${!isReply ? 'border-b border-gray-100 pb-4' : 'mb-3'}`}>
-                {/* Comment/Reply Content */}
-                <div className="flex items-start space-x-3">
-                    <div className={`${isReply ? 'w-8 h-8' : 'w-10 h-10'} rounded-full overflow-hidden flex-shrink-0`}>
-                        {comment.user.profilePic ? (
-                            <img
-                                src={comment.user.profilePic}
-                                alt={comment.user.name}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                                <Icon icon="material-symbols:person-outline" className={`${isReply ? 'w-4 h-4' : 'w-6 h-6'} text-gray-600`} />
-                            </div>
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                            <h4 className={`font-semibold text-gray-900 ${isReply ? 'text-sm' : 'text-base'}`}>
-                                {comment.user.name}
-                            </h4>
-                            <span className={`text-gray-500 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                                @{comment.user.username}
-                            </span>
-                            <span className={`text-gray-400 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                                {new Date(comment.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
-                        <p className={`text-gray-700 mb-2 ${isReply ? 'text-sm' : 'text-base'}`}>
-                            {comment.text}
-                        </p>
-                        <div className={`flex items-center space-x-4 ${isReply ? 'text-xs' : 'text-sm'}`}>
-                            <button
-                                onClick={() => handleCommentLikeToggle(comment._id)}
-                                className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
-                                disabled={!loggedInUserId}
-                            >
-                                <Icon
-                                    icon={isLikedByUser ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
-                                    className={`${isReply ? 'w-3 h-3' : 'w-4 h-4'} ${isLikedByUser ? 'text-red-500' : ''}`}
-                                />
-                                <span>{likesCount}</span>
-                            </button>
-                            <button
-                                onClick={handleReplyClick}
-                                className="text-gray-500 hover:text-forest transition-colors font-medium"
-                                disabled={!loggedInUserId}
-                            >
-                                Reply
-                            </button>
-                        </div>
-
-                        {/* Reply Input */}
-                        {showReplyInput && (
-                            <div className="flex gap-2 mt-3">
-                                <input
-                                    ref={replyInputRef}
-                                    className={`border border-gray-300 px-3 py-2 rounded-lg ${isReply ? 'text-xs' : 'text-sm'} flex-1 focus:ring-forest focus:border-forest`}
-                                    placeholder="Write a reply..."
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleReplySubmit();
-                                        }
-                                    }}
-                                />
-                                <button
-                                    onClick={handleReplySubmit}
-                                    className={`${isReply ? 'text-xs' : 'text-sm'} bg-forest text-white px-3 py-2 rounded-lg hover:bg-teal-800 transition-colors`}
-                                >
-                                    Reply
-                                </button>
-                                <button
-                                    onClick={() => setShowReplyInput(false)}
-                                    className={`${isReply ? 'text-xs' : 'text-sm'} text-gray-500 px-3 py-2 hover:text-gray-700 transition-colors`}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Replies Section - Only for main comments */}
-                {!isReply && comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-4">
-                        {/* Show More Replies Button - if there are hidden replies */}
-                        {hasMoreReplies && (
-                            <button
-                                onClick={loadMoreReplies}
-                                className="text-gray-500 hover:text-gray-700 text-sm font-medium mb-3 ml-12"
-                            >
-                                ── View {Math.min(6, hiddenRepliesCount)} more {hiddenRepliesCount === 1 ? 'reply' : 'replies'}
-                            </button>
-                        )}
-
-                        {/* Render visible replies */}
-                        {repliesToShow.map(reply => (
-                            <CommentItem key={reply._id} comment={reply} isReply={true} />
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // Updated CommentSection Component
-    const CommentSection: React.FC<{
-        comments: Comment[];
-        handleAddComment: (text: string, parentId: string | null) => void;
-    }> = ({ comments, handleAddComment }) => {
-        const commentInputRef = useRef<HTMLInputElement>(null);
-
-        const handleSubmit = () => {
-            const val = commentInputRef.current?.value.trim();
-            if (val) {
-                handleAddComment(val, null);
-                if (commentInputRef.current) commentInputRef.current.value = '';
-            }
-        };
-
-        const totalCommentsCount = comments.length + comments.reduce((acc, comment) => acc + (comment.replies?.length || 0), 0);
-
-        return (
-            <div className="mt-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                    Comments ({totalCommentsCount})
-                </h3>
-                <div className="flex gap-2 mb-6">
-                    <input
-                        ref={commentInputRef}
-                        type="text"
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-forest focus:border-forest"
-                        placeholder="Add a comment..."
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleSubmit();
-                            }
-                        }}
-                    />
-                    <button
-                        onClick={handleSubmit}
-                        className="bg-forest text-white px-5 py-2 rounded-lg font-medium hover:bg-teal-800 transition-colors"
-                    >
-                        Post
-                    </button>
-                </div>
-                {comments.length === 0 ? (
-                    <p className="text-gray-500 text-center py-6">No comments yet. Be the first to comment!</p>
-                ) : (
-                    comments.map(comment => (
-                        <CommentItem key={comment._id} comment={comment} />
-                    ))
-                )}
-            </div>
-        );
-    };
-
-   if (loading) {
-        return <ListingDetailSkeleton />; // Render the skeleton while loading
+    if (loading) {
+        return <ListingDetailSkeleton />;
     }
     if (error) {
         return <div className="min-h-screen flex items-center justify-center pt-[10vh] bg-ambient text-red-600">Error: {error}</div>;
@@ -722,159 +347,33 @@ const ListingDetailPage: React.FC = () => {
     return (
         <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter pb-12">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Gallery Section */}
-                <div className="mb-8">
-                    {mainImage && (
-                        <div className="w-full h-[500px] rounded-xl overflow-hidden shadow-lg mb-4">
-                            <img
-                                src={mainImage}
-                                alt={listing?.title || 'Listing main image'}
-                                className="w-full h-full object-cover"
-                                width={1200}
-                                height={500}
-                            />
-                        </div>
-                    )}
-                    <div className="flex flex-wrap gap-4 justify-center">
-                        {listing?.images.map((image, index) => (
-                            <div
-                                key={index}
-                                className={`w-24 h-24 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${mainImage === image ? 'border-forest ring-2 ring-forest' : 'border-gray-200 hover:border-gray-400'}`}
-                                onClick={() => setMainImage(image)}
-                            >
-                                <img
-                                    src={image}
-                                    alt={`Listing thumbnail ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                    width={96}
-                                    height={96}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                <ListingGallery
+                    images={listing.images}
+                    mainImage={mainImage}
+                    setMainImage={setMainImage}
+                    title={listing.title}
+                />
 
-                {/* Listing Details and Host Info */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 bg-white p-8 rounded-xl shadow-md">
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">{listing?.title}</h1>
-                        <p className="text-lg text-gray-700 mb-4 flex items-center">
-                            <Icon icon="material-symbols:location-on-outline" className="w-5 h-5 mr-2 text-gray-600" />
-                            {listing?.city}, {listing?.country}
-                        </p>
+                    <ListingDetailsCard
+                        listing={listing}
+                        isLiked={isLiked}
+                        likesCount={likesCount}
+                        comments={comments}
+                        handleLikeToggle={handleLikeToggle}
+                        formatAvailability={formatAvailability}
+                    />
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-gray-600 text-sm mb-6">
-                            <span className="flex items-center">
-                                <Icon icon="material-symbols:home-outline" className="w-5 h-5 mr-1" /> {listing?.type}
-                            </span>
-                            {listing?.roommates && listing.roommates.length > 0 && (
-                                <span className="flex items-center">
-                                    <Icon icon="material-symbols:group-outline" className="w-5 h-5 mr-1" /> Roommates: {listing?.roommates.join(', ')}
-                                </span>
-                            )}
-                            <span className="flex items-center">
-                                <Icon icon="material-symbols:calendar-today-outline" className="w-5 h-5 mr-1" /> {formatAvailability(listing?.availability)}
-                            </span>
-                        </div>
-
-                        {/* Like and Comment counts */}
-                        <div className="flex items-center gap-4 text-gray-700 mb-6">
-                            <button onClick={handleLikeToggle} className="flex items-center space-x-1 focus:outline-none">
-                                <Icon
-                                    icon={isLiked ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
-                                    className={`w-6 h-6 transition-colors ${isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-400'}`}
-                                />
-                                <span className="text-base font-medium">{likesCount} Likes</span>
-                            </button>
-                            <div className="flex items-center space-x-1">
-                                <Icon icon="material-symbols:chat-bubble-outline" className="w-6 h-6 text-gray-500" />
-                                <span className="text-base font-medium">{comments.length + comments.flatMap(c => c.replies || []).length} Comments</span>
-                            </div>
-                        </div>
-
-                        <hr className="my-6 border-gray-200" />
-
-                        <h2 className="text-2xl font-semibold text-gray-900 mb-3">Description</h2>
-                        <p className="text-gray-700 leading-relaxed mb-6">
-                            {listing?.details}
-                        </p>
-
-                        {listing?.amenities && listing.amenities.length > 0 && (
-                            <>
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-3">What this place offers</h2>
-                                <div className="grid grid-cols-2 gap-4 mb-6">
-                                    {listing?.amenities.map((amenity, index) => (
-                                        <div key={index} className="flex items-center text-gray-700">
-                                            <Icon icon={`material-symbols:${amenity.replace(/-/g, '-')}`} className="w-6 h-6 mr-3 text-forest" />
-                                            <span>{amenity.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-                        {listing?.tags && listing.tags.length > 0 && (
-                            <>
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-3">Tags/Features</h2>
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    {listing?.tags.map((tag, index) => (
-                                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full">
-                                            #{tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                        </span>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-
-                        {/* Comments Section */}
-                        <hr className="my-6 border-gray-200" />
-                        <CommentSection
-                            comments={comments}
-                            handleAddComment={handleAddComment}
-                        />
-                    </div>
-
-                    {/* Host Card */}
-                    <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-md h-fit sticky top-28">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Meet your Host</h2>
-                        {listing?.user ? (
-                            <Link href={`/profile/${listing?.user._id}`} passHref>
-                                <div className="flex items-center mb-4 cursor-pointer hover:opacity-80 transition-opacity">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden mr-4 border-2 border-forest">
-                                        {listing?.user.profilePic ? (
-                                            <img
-                                                src={listing?.user.profilePic}
-                                                alt={listing?.user.name}
-                                                width={64}
-                                                height={64}
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <Icon icon="material-symbols:person-outline" className="w-16 h-16 text-gray-400" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-lg text-gray-900">{listing?.user.name}</h3>
-                                        <p className="text-gray-600 text-sm">@{listing?.user.username}</p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ) : (
-                            <p className="text-gray-600">Host information not available.</p>
-                        )}
-
-                        <p className="text-gray-700 text-sm mb-4">
-                            {listing?.user?.name} is a verified host on Casway, committed to providing great stays.
-                        </p>
-                        <button
-                            onClick={() => { /* Implement chat functionality */ }}
-                            className="w-full bg-forest text-white px-6 py-3 rounded-full font-medium hover:bg-teal-800 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Icon icon="material-symbols:chat-outline" className="w-5 h-5" />
-                            Message Host
-                        </button>
-                    </div>
+                    {listing.user && <ProfileHeader user={listing.user} />}
                 </div>
+
+                <hr className="my-6 border-gray-200" />
+                <CommentSection
+                    comments={comments}
+                    handleAddComment={handleAddComment}
+                    handleCommentLikeToggle={handleCommentLikeToggle}
+                    loggedInUserId={loggedInUserId}
+                />
             </div>
         </div>
     );
