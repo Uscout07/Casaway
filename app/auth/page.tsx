@@ -27,7 +27,7 @@ interface AuthErrorResponse {
     error?: any;
 }
 
-const API_BASE_URL = "https://casaway-backend.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 const AuthPage = () => {
     const [isLogin, setIsLogin] = useState(true);

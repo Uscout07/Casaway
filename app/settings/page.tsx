@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import ConfirmDialog from '../components/confirmDialog'; // Assuming this path is correct
 import UserListingsSection from '../components/UserListingsSection';
-import EditListingForm from '../components/EditListingForm'; // Import the new form component
-import EditPostForm from '../components/editPostform';
+import EditListingForm from './editListingForm'; // Import the new form component
+import EditPostForm from './editPostform';
 import Link from 'next/link'; // Import Link for 'Add New Post' button
 
 type UserData = {

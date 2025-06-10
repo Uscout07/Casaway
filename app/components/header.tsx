@@ -78,13 +78,13 @@ export default function NavBar() {
   return (
     <header className="px-6 py-6 w-screen fixed flex-1 flex items-center justify-between top-0 z-50 font-inter bg-ambient h-[9vh]">
       <div className="w-full mx-auto flex items-center justify-between px-20">
-        <Image className="w-[32px] h-[32px]" src="/logo.png" alt={"Logo"} />
+        <Image width={32} height={32} src="/logo.png" alt={"Logo"} />
 
         <nav className="flex space-x-16 items-center">
           <a href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</a>
           <a href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Search</a>
-          <a href="/chat" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Chat</a>
-          <a href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Post</a>
+          <a href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</a>
+          <a href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</a>
           <a href="/settings" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Settings</a>
         </nav>
 

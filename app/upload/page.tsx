@@ -62,6 +62,8 @@ const UploadListingPage = () => {
         { id: 'office-desk', name: 'Office Desk', icon: 'mdi:desk' },
         { id: 'office-chair', name: 'Office Chair', icon: 'mdi:chair-rolling' },
         { id: 'monitors', name: 'Monitors', icon: 'mdi:monitor' },
+        { id: 'air-conditioning', name: 'Air Conditioning', icon: 'mdi:air-conditioner' }, // Added air-conditioning
+        { id: 'heater', name: 'Heater', icon: 'mdi:radiator' }, // Added heater
     ];
 
     const features = [
@@ -558,7 +560,7 @@ const UploadListingPage = () => {
                                             />
                                             <input
                                                 type="text"
-                                                placeholder="Gender of roommates (e.g. mixed, male, female)"
+                                                placeholder="Gender of roommates"
                                                 value={roommateDetails.gender}
                                                 onChange={(e) =>
                                                     setRoommateDetails((prev) => ({ ...prev, gender: e.target.value }))
@@ -573,7 +575,7 @@ const UploadListingPage = () => {
                                                     }`}
                                             >
                                                 <Icon icon="mdi:gender-female" className="w-6 h-6" />
-                                                <span>Available for Females Only</span>
+                                                <span>Available for women only</span>
                                                 {livingWith.includes('females-only') && (
                                                     <Icon icon="mdi:check" className="w-5 h-5 text-teal-600 ml-auto" />
                                                 )}

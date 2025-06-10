@@ -31,14 +31,21 @@ export interface Listing {
         startDate: string;
         endDate: string;
     }[];
-    images: string[];
+    
     thumbnail: string;
     user: {
         _id: string;
         name: string;
     };
-    createdAt: string;
-    updatedAt: string;
+        description: string;
+        price: number;
+        category: string;
+        condition: string;
+        images: string[];
+        owner: string | User; // Can be string ID or populated User object
+        createdAt: string;
+        updatedAt: string;
+        location?: string;
     
 }
 
