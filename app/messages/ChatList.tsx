@@ -166,7 +166,7 @@ const ChatList: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full overflow-y-auto bg-ambient shadow-none">
+        <div className="flex flex-col h-full overflow-y-auto bg-ambient shadow-none z-10">
             <h2 className="text-lg sm:text-xl lg:text-2xl font-bold p-3 sm:p-4 border-b border-gray-200 sticky top-0 bg-ambient z-10">
                 Your Chats
             </h2>

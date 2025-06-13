@@ -88,7 +88,7 @@ export default function NavBar() {
   };
 
   return (
-    <header className="px-6 md:py-6 w-full fixed flex-1 flex items-center justify-between  font-inter bg-ambient md:h-[9vh]">
+    <header className="px-6 md:py-6 w-full fixed flex-1 flex items-center justify-between  font-inter bg-ambient md:h-[9vh] z-50">
       <div className="top-0 z-50 w-full mx-auto flex items-center justify-between px-20 max-md:hidden">
         <Image width={32} height={32} src="/logo.png" alt="Logo" />
 

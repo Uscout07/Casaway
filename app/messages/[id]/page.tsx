@@ -240,7 +240,7 @@ const ChatPage = () => {
             {/* Mobile Back Button - Only show when coming from chat list */}
             <div className="lg:hidden flex items-center p-2 border-b border-gray-200 bg-ambient">
                 <button
-                    onClick={() => router.push('/chat')} // Go back to chat list on mobile
+                    onClick={() => router.push('/messages')} // Go back to chat list on mobile
                     className="p-2 text-forest hover:bg-gray-100 rounded-full mr-2"
                 >
                     <Icon icon="heroicons:arrow-left" className="h-5 w-5" />
