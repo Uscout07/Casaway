@@ -154,7 +154,7 @@ const AuthPage = () => {
     };
 
     return (
-        <div className="h-[100vh] bg-ambient flex items-center justify-center px-6 pt-[20vh] pb-8 ">
+        <div className="h-[100vh] bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[20vh] pb-8 ">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-forest rounded-full flex items-center justify-center mx-auto mb-4">

@@ -1,11 +1,10 @@
-// app/chat/ChatList.tsx
+// app/chat/ChatList.tsx - Responsive Chat List
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@iconify/react';
 
-// Interfaces (remain the same)
 interface UserPopulated {
     _id: string;
     name: string;
@@ -32,25 +31,20 @@ interface Chat {
 
 const ChatList: React.FC = () => {
     const [chats, setChats] = useState<Chat[]>([]);
-    const [loading, setLoading] = useState(true); // Keep initial loading true
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const pathname = usePathname();
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
     const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
     const [isClient, setIsClient] = useState(false);
 
-    // Effect 1 (runs once): Set isClient to true once component mounts on client
     useEffect(() => {
         setIsClient(true);
         console.log("[ChatList useEffect 0] Component is mounted on client.");
     }, []);
 
-    // Effect 2: Load loggedInUserId from localStorage, only if isClient is true
-    // This effect should be responsible for setting loggedInUserId and *only* then.
-    // It should *not* set loading to false directly if it intends for the next effect to fetch.
     useEffect(() => {
         console.log(`[ChatList useEffect 1 (localStorage)] isClient: ${isClient}. Attempting localStorage read.`);
         if (!isClient) {
@@ -67,36 +61,28 @@ const ChatList: React.FC = () => {
                 console.log("[ChatList useEffect 1 (localStorage)] Parsed user object:", userObj);
                 setLoggedInUserId(userObj._id);
                 console.log("[ChatList useEffect 1 (localStorage)] setLoggedInUserId to:", userObj._id);
-                // DO NOT set loading to false here. Let Effect 3 handle the loading for fetch.
             } catch (e) {
                 console.error("[ChatList useEffect 1 (localStorage)] Error parsing user from localStorage:", e);
                 setLoggedInUserId(null);
                 setError("Failed to retrieve user session. Please log in again.");
-                setLoading(false); // Set loading false if user parsing failed (no subsequent fetch)
+                setLoading(false);
             }
         } else {
             console.log("[ChatList useEffect 1 (localStorage)] No 'user' found in localStorage. Redirecting to /auth.");
             setLoggedInUserId(null);
             setError("No user session found. Please log in.");
-            setLoading(false); // Set loading false as there's no user and no fetch will occur
+            setLoading(false);
             router.push('/auth');
         }
     }, [isClient, router]);
 
-    // Effect 3: Fetch chats when loggedInUserId is available and client-side
     useEffect(() => {
         console.log(`[ChatList useEffect 2 (Fetch)] loggedInUserId state: ${loggedInUserId}, isClient: ${isClient}`);
 
-        // Only fetch if loggedInUserId is set AND the component is on the client side
-        // and we are not already loading (to prevent re-triggering on loading state change itself)
         if (loggedInUserId && isClient) {
-            // We only trigger fetch if loggedInUserId is truly ready.
-            // set loading to true *here* and only if not already loading, to prevent
-            // a loop from loading state change.
-            // A more robust pattern might be to ensure `loggedInUserId` changes from null to a value.
             console.log("[ChatList useEffect 2 (Fetch)] loggedInUserId is set and client-side, attempting to fetch chats.");
             const fetchUserChats = async () => {
-                setLoading(true); // Start loading when fetch begins
+                setLoading(true);
                 const token = localStorage.getItem('token');
                 console.log("[ChatList fetchUserChats] localStorage 'token':", token ? "Found" : "Not Found");
 
@@ -129,20 +115,15 @@ const ChatList: React.FC = () => {
                     console.error('[ChatList fetchUserChats] Error fetching chats:', err);
                     setError(err instanceof Error ? err.message : 'Failed to fetch chats.');
                 } finally {
-                    setLoading(false); // Stop loading when fetch ends
+                    setLoading(false);
                 }
             };
 
             fetchUserChats();
         } else if (loggedInUserId === null && isClient) {
-            // If client-side and loggedInUserId is null, it means there's no user,
-            // and the previous effect should have handled redirecting/error.
-            // So we just ensure loading is false.
              setLoading(false);
         }
-        // Removed the `loading` dependency from here.
     }, [loggedInUserId, isClient, API_BASE_URL, router]);
-
 
     const handleChatClick = (chatId: string) => {
         router.push(`/chat/${chatId}`);
@@ -157,13 +138,11 @@ const ChatList: React.FC = () => {
         return otherMember || { name: "Unknown User", profilePic: undefined };
     };
 
-    // Conditional rendering based on loading and error states
     if (loading) {
-        // This covers both initial server-side render/hydration AND client-side data fetching
         return (
             <div className="flex-1 flex items-center justify-center p-4">
-                <Icon icon="line-md:loading-loop" className="w-8 h-8 text-forest" />
-                <p className="ml-2">Loading chats...</p>
+                <Icon icon="line-md:loading-loop" className="w-6 h-6 sm:w-8 sm:h-8 text-forest" />
+                <p className="ml-2 text-sm sm:text-base">Loading chats...</p>
             </div>
         );
     }
@@ -172,12 +151,12 @@ const ChatList: React.FC = () => {
         return (
             <div className="flex-1 flex items-center justify-center text-center p-4 text-red-500">
                 <div>
-                    <Icon icon="material-symbols:error-outline" className="w-10 h-10 mb-2 mx-auto" />
-                    <p className="text-sm font-semibold mb-1">Error</p>
+                    <Icon icon="material-symbols:error-outline" className="w-8 h-8 sm:w-10 sm:h-10 mb-2 mx-auto" />
+                    <p className="text-xs sm:text-sm font-semibold mb-1">Error</p>
                     <p className="text-xs">{error}</p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="mt-4 px-3 py-1 bg-forest-light text-white rounded-md hover:bg-forest transition-colors text-sm"
+                        className="mt-4 px-3 py-1 bg-forest-light text-white rounded-md hover:bg-forest transition-colors text-xs sm:text-sm"
                     >
                         Reload
                     </button>
@@ -186,16 +165,16 @@ const ChatList: React.FC = () => {
         );
     }
 
-    // At this point, loading is false, and there's no error.
-    // Display the chat list or "no chats" message.
     return (
         <div className="flex flex-col h-full overflow-y-auto bg-ambient shadow-none">
-            <h2 className="text-2xl font-bold p-4 border-b border-gray-200 sticky top-0 bg-ambient z-10">Your Chats</h2>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold p-3 sm:p-4 border-b border-gray-200 sticky top-0 bg-ambient z-10">
+                Your Chats
+            </h2>
             {chats.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 text-center text-gray-500">
-                    <Icon icon="material-symbols:chat" className="w-16 h-16 mb-4 text-gray-400" />
-                    <p className="text-lg">No active chats yet.</p>
-                    <p className="text-sm mt-2">Start a conversation from a user's profile!</p>
+                    <Icon icon="material-symbols:chat" className="w-12 h-12 sm:w-16 sm:h-16 mb-4 text-gray-400" />
+                    <p className="text-base sm:text-lg">No active chats yet.</p>
+                    <p className="text-xs sm:text-sm mt-2">Start a conversation from a user's profile!</p>
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto">
@@ -207,24 +186,24 @@ const ChatList: React.FC = () => {
                         return (
                             <div
                                 key={chat._id}
-                                className={`flex items-center p-4 border-b border-gray-200 cursor-pointer transition-colors ${
+                                className={`flex items-center p-3 sm:p-4 border-b border-gray-200 cursor-pointer transition-colors ${
                                     isActive ? 'bg-teal-100' : 'hover:bg-gray-50'
                                 }`}
                                 onClick={() => handleChatClick(chat._id)}
                             >
-                                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 mr-4 bg-gray-200 flex items-center justify-center">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 mr-3 sm:mr-4 bg-gray-200 flex items-center justify-center">
                                     {otherMember.profilePic ? (
                                         <img src={otherMember.profilePic} alt={otherMember.name} className="w-full h-full object-cover" />
                                     ) : (
-                                        <Icon icon="material-symbols:person" className="w-8 h-8 text-gray-500" />
+                                        <Icon icon="material-symbols:person" className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
                                     )}
                                 </div>
                                 <div className="flex-grow min-w-0">
-                                    <div className="font-semibold text-lg text-forest truncate">
+                                    <div className="font-semibold text-base sm:text-lg text-forest truncate">
                                         {chat.isGroup ? 'Group Chat (TODO)' : otherMember.name || "Loading..."}
                                     </div>
                                     {lastMessage && (
-                                        <p className="text-gray-600 text-sm truncate">
+                                        <p className="text-gray-600 text-xs sm:text-sm truncate">
                                             <span className="font-medium text-gray-700">
                                                 {lastMessage.sender?._id === loggedInUserId
                                                     ? 'You: '
@@ -234,11 +213,11 @@ const ChatList: React.FC = () => {
                                         </p>
                                     )}
                                     {!lastMessage && (
-                                        <p className="text-gray-500 text-sm italic">No messages yet.</p>
+                                        <p className="text-gray-500 text-xs sm:text-sm italic">No messages yet.</p>
                                     )}
                                 </div>
                                 {lastMessage && (
-                                    <div className="text-xs text-gray-500 flex-shrink-0 ml-4">
+                                    <div className="text-xs text-gray-500 flex-shrink-0 ml-2 sm:ml-4 hidden sm:block">
                                         {new Date(lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 )}

@@ -407,7 +407,7 @@ const PostDetailPage: React.FC = () => {
 
     return (
         <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter pb-12">
-            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg my-8">
+            <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto bg-white rounded-xl shadow-lg my-8">
                 {/* Post Header (User Info) */}
                 <div className="flex items-center p-4 border-b border-gray-100">
                     <Link href={`/profile/${post.user._id}`}>

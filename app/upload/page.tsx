@@ -164,7 +164,6 @@ const UploadListingPage = () => {
         }
     };
 
-
     const navigateMonth = (direction: 'prev' | 'next') => { // Added type
         if (direction === 'prev') {
             if (currentMonth === 0) {
@@ -215,6 +214,7 @@ const UploadListingPage = () => {
 
         return days;
     };
+
     const getDateRangeArray = (start: string, end: string): string[] => {
         const startDate = new Date(start);
         const endDate = new Date(end);
@@ -231,13 +231,11 @@ const UploadListingPage = () => {
         return range;
     };
 
-
     const isInRange = (dateStr: string) => {
         if (!selectedRange.start || !selectedRange.end) return false;
         const date = new Date(dateStr);
         return date >= new Date(selectedRange.start) && date <= new Date(selectedRange.end);
     };
-
 
     const handleSubmitListing = async (status: 'draft' | 'published') => {
         setIsLoading(true); // Start loading state
@@ -288,9 +286,6 @@ const UploadListingPage = () => {
         }
         if (livingWith.includes('females-only')) tags.push('women-only');
 
-        // In your handleSubmitListing function, around line 185-190
-        // Change this part:
-
         const listingData = {
             title: formData.title,
             details: formData.details,
@@ -304,8 +299,6 @@ const UploadListingPage = () => {
             thumbnail: imageUrls[thumbnailIndex] || imageUrls[0] || '',
             status,
             roommates
-
-            // Convert array to comma-separated string
         };
 
         try {
@@ -341,6 +334,7 @@ const UploadListingPage = () => {
             setIsLoading(false); // Always stop loading, regardless of success or error
         }
     };
+
     const handlePostCreated = () => {
         // Optional: Reset form fields or show a success message
         // For this example, we just show an alert in CreatePostForm
@@ -353,46 +347,46 @@ const UploadListingPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-ambient font-inter pt-[10vh]">
-            <h1 className="text-[24px] py-8 font-bold text-forest text-center">
+        <div className="min-h-screen bg-ambient font-inter pt-[10vh] px-4 sm:px-6 lg:px-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl py-4 sm:py-6 md:py-8 font-bold text-forest text-center">
                 {viewMode === 'listing' ? 'Upload Listing' : 'Create Post'}
             </h1>
 
             {/* Toggle Buttons */}
-            <div className="flex justify-center mb-8">
-                <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1">
+            <div className="flex justify-center mb-6 sm:mb-8">
+                <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1 w-full max-w-md">
                     <button
                         onClick={() => setViewMode('listing')}
-                        className={`py-2 px-8 rounded-full text-lg font-bold transition-colors z-10
-                            ${viewMode === 'listing' ? 'text-white bg-forest p-5' : 'text-white'}`}
+                        className={`py-2 px-4 sm:px-6 md:px-8 rounded-full text-sm sm:text-base md:text-lg font-bold transition-colors z-10 flex-1
+                            ${viewMode === 'listing' ? 'text-white bg-forest p-3 sm:p-4 md:p-5' : 'text-white'}`}
                     >
                         Create a Listing
                     </button>
                     <button
                         onClick={() => setViewMode('post')}
-                        className={`py-2 px-8 rounded-full text-lg font-bold transition-colors z-10
-                            ${viewMode === 'post' ? 'text-white bg-forest p-5' : 'text-white'}`}
+                        className={`py-2 px-4 sm:px-6 md:px-8 rounded-full text-sm sm:text-base md:text-lg font-bold transition-colors z-10 flex-1
+                            ${viewMode === 'post' ? 'text-white bg-forest p-3 sm:p-4 md:p-5' : 'text-white'}`}
                     >
                         Create a Post
                     </button>
                     <div
                         className={`absolute top-0 bottom-0 w-1/2 bg-forest-green rounded-full shadow-md transition-transform duration-300 ease-in-out
                             ${viewMode === 'listing' ? 'left-0' : 'left-1/2 translate-x-full'}`}
-                        style={{ // Adjust for visual effect if needed
+                        style={{
                             transform: viewMode === 'listing' ? 'translateX(0)' : 'translateX(calc(100% - 8px))'
                         }}
                     ></div>
                 </div>
             </div>
 
-
             {viewMode === 'listing' ? (
-                <div className="flex justify-evenly">
-                    <div className="p-4 w-1/3 flex flex-col space-y-6">
+                <div className="flex flex-col lg:flex-row lg:justify-evenly gap-6 lg:gap-8">
+                    {/* Left Column - Images and Calendar */}
+                    <div className="w-full lg:w-1/3 flex flex-col space-y-6">
                         {/* Image Upload Section */}
-                        <div className="bg-white min-w-[460px] min-h-[340px] rounded-lg flex flex-col items-center justify-center p-8 text-center mb-4">
-                            <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-teal-600 mx-auto mb-4" />
-                            <p className="text-gray-600 mb-4">Upload Images of Your Property</p>
+                        <div className="bg-white min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[340px] rounded-lg flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center mb-4 relative">
+                            <Icon icon="material-symbols:upload-rounded" className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-teal-600 mx-auto mb-4" />
+                            <p className="text-gray-600 mb-4 text-sm sm:text-base">Upload Images of Your Property</p>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -403,22 +397,23 @@ const UploadListingPage = () => {
                             />
                             <label
                                 htmlFor="image-upload"
-                                className="w-[460px] h-[340px] absolute z-20 opacity-0 cursor-pointer"
+                                className="absolute inset-0 z-20 opacity-0 cursor-pointer"
                             >
                                 Choose Images
                             </label>
                         </div>
+
                         {/* Selected Images Display */}
                         {selectedImages.length > 0 && (
                             <div>
                                 <p className="text-sm text-gray-600 mb-3">Selected Images ({selectedImages.length}/10):</p>
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     {selectedImages.map((image, index) => (
                                         <div key={image.id} className="relative group">
                                             <img
                                                 src={image.url}
                                                 alt={image.name}
-                                                className={`w-full h-20 object-cover rounded-lg border-2 ${thumbnailIndex === index ? 'border-forest' : 'border-transparent'
+                                                className={`w-full h-16 sm:h-20 object-cover rounded-lg border-2 ${thumbnailIndex === index ? 'border-forest' : 'border-transparent'
                                                     } cursor-pointer`}
                                                 onClick={() => setThumbnailIndex(index)}
                                             />
@@ -435,27 +430,27 @@ const UploadListingPage = () => {
                                             )}
                                         </div>
                                     ))}
-
                                 </div>
                             </div>
                         )}
+
                         {/* Calendar with Range Selection */}
-                        <div className="bg-white rounded-lg p-6 shadow-sm">
-                            <h3 className="text-lg font-medium text-gray-800 mb-4">Select Availability</h3>
+                        <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm">
+                            <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4">Select Availability</h3>
                             <div className="mb-4">
                                 <div className="flex items-center justify-between mb-4">
                                     <button onClick={() => navigateMonth('prev')} className="p-2 rounded-lg hover:bg-gray-100">
-                                        <Icon icon="mdi:chevron-left" className="w-6 h-6" />
+                                        <Icon icon="mdi:chevron-left" className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
-                                    <h4 className="text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h4>
+                                    <h4 className="text-sm sm:text-base md:text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h4>
                                     <button onClick={() => navigateMonth('next')} className="p-2 rounded-lg hover:bg-gray-100">
-                                        <Icon icon="mdi:chevron-right" className="w-6 h-6" />
+                                        <Icon icon="mdi:chevron-right" className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </button>
                                 </div>
 
                                 <div className="grid grid-cols-7 gap-1 mb-2">
                                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                                        <div key={`${day}-${index}`} className="p-2 text-center text-sm font-medium text-gray-500">
+                                        <div key={`${day}-${index}`} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">
                                             {day}
                                         </div>
                                     ))}
@@ -467,86 +462,87 @@ const UploadListingPage = () => {
                             </div>
 
                             {selectedRange.start && selectedRange.end && (
-                                <div className="text-sm text-gray-600 mt-2">
+                                <div className="text-xs sm:text-sm text-gray-600 mt-2">
                                     Selected from <strong>{selectedRange.start}</strong> to <strong>{selectedRange.end}</strong>
                                 </div>
                             )}
-
                         </div>
                     </div>
-                    <div className="p-4 w-1/2 space-y-6">
+
+                    {/* Right Column - Form Fields */}
+                    <div className="w-full lg:w-1/2 space-y-6">
                         {/* Space Type Selection */}
-                        <div className="rounded-lg p-6">
-                            <h3 className="text-lg font-medium text-gray-800 mb-4">What type of space do you want to list?</h3>
-                            <div className="flex gap-4 mb-4">
+                        <div className="rounded-lg p-4 sm:p-6">
+                            <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4">What type of space do you want to list?</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <button
                                     onClick={() => handleSpaceTypeSelect('Single Room')}
-                                    className={`p-4 rounded-lg border-2 w-[300px] h-[100px] flex bg-forest-light text-forest items-center justify-evenly transition-colors ${listingType === 'Single Room'
+                                    className={`p-3 sm:p-4 rounded-lg border-2 h-20 sm:h-24 md:h-[100px] flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-4 transition-colors ${listingType === 'Single Room'
                                         ? 'border-teal-600 bg-teal-50 text-teal-700'
                                         : 'border-forest'
                                         }`}
                                 >
-                                    <Icon icon="mdi:guest-room-outline" className="w-[48px] h-[48px]" />
-                                    <span className="text-[18px] font-bold">Single Room</span>
+                                    <Icon icon="mdi:guest-room-outline" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                                    <span className="text-sm sm:text-base md:text-lg font-bold">Single Room</span>
                                 </button>
 
                                 <button
                                     onClick={() => handleSpaceTypeSelect('Whole Apartment')}
-                                    className={`p-4 rounded-lg w-[300px] h-[100px] border-[3px] flex bg-forest-light text-forest items-center justify-evenly transition-colors ${listingType === 'Whole Apartment'
+                                    className={`p-3 sm:p-4 rounded-lg border-2 h-20 sm:h-24 md:h-[100px] flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-4 transition-colors ${listingType === 'Whole Apartment'
                                         ? 'border-teal-600 bg-teal-50 text-teal-700'
                                         : 'border-forest'
                                         }`}
                                 >
-                                    <Icon icon="ph:building-apartment" className="w-[48px] h-[48px]" />
-                                    <span className="text-[18px] font-bold">Whole Apartment</span>
+                                    <Icon icon="ph:building-apartment" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                                    <span className="text-sm sm:text-base md:text-lg font-bold">Whole Apartment</span>
                                 </button>
                             </div>
 
                             <button
                                 onClick={() => handleSpaceTypeSelect('Whole House')}
-                                className={`w-[300px] h-[100px] p-4 rounded-lg border-2 flex bg-forest-light text-forest items-center justify-evenly transition-colors ${listingType === 'Whole House'
+                                className={`w-full sm:w-auto h-20 sm:h-24 md:h-[100px] p-3 sm:p-4 rounded-lg border-2 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-4 transition-colors ${listingType === 'Whole House'
                                     ? 'border-teal-600 bg-teal-50 text-teal-700'
                                     : 'border-forest'
                                     }`}
                             >
-                                <Icon icon="solar:home-linear" className="w-[48px] h-[48px]" />
-                                <span className="text-[18px] font-bold">Whole House</span>
+                                <Icon icon="solar:home-linear" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                                <span className="text-sm sm:text-base md:text-lg font-bold">Whole House</span>
                             </button>
                         </div>
 
-
                         {/* Single Room Living Arrangements */}
                         {listingType === 'Single Room' && (
-                            <div className="rounded-lg p-6 ">
-                                <h3 className="text-lg font-medium text-gray-800 mb-4">Who will your swap live with?</h3>
+                            <div className="rounded-lg p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4">Who will your swap live with?</h3>
                                 <div className="space-y-3">
                                     <button
                                         onClick={() => handleLivingWithToggle('family')}
-                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors ${livingWith.includes('family')
+                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors max-md:flex max-md:items-center max-md:justify-start max-md:gap-1 ${livingWith.includes('family')
                                             ? 'border-teal-600 bg-teal-50 text-teal-700'
                                             : 'border-forest'
                                             }`}
                                     >
-                                        <Icon icon="mdi:account-group" className="w-6 h-6" />
-                                        <span>Family</span>
+                                        <Icon icon="mdi:account-group" className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        <span className="text-sm sm:text-base">Family</span>
                                         {livingWith.includes('family') && (
-                                            <Icon icon="mdi:check" className="w-5 h-5 text-teal-600 ml-auto" />
+                                            <Icon icon="mdi:check" className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 ml-auto" />
                                         )}
                                     </button>
 
                                     <button
                                         onClick={() => handleLivingWithToggle('roommates')}
-                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors ${livingWith.includes('roommates-women')
+                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors max-md:flex max-md:items-center max-md:justify-start max-md:gap-1 ${livingWith.includes('roommates-women')
                                             ? 'border-teal-600 bg-teal-50 text-teal-700'
                                             : 'border-forest'
                                             }`}
                                     >
-                                        <Icon icon="mdi:account-group" className="w-6 h-6" />
-                                        <span>Roommates</span>
+                                        <Icon icon="mdi:account-group" className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        <span className="text-sm sm:text-base">Roommates</span>
                                         {livingWith.includes('roommates-women') && (
-                                            <Icon icon="mdi:check" className="w-5 h-5 text-teal-600 ml-auto" />
+                                            <Icon icon="mdi:check" className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 ml-auto" />
                                         )}
                                     </button>
+
                                     {livingWith.includes('roommates') && (
                                         <div className="ml-4 space-y-2">
                                             <input
@@ -569,25 +565,23 @@ const UploadListingPage = () => {
                                             />
                                             <button
                                                 onClick={() => handleLivingWithToggle('females-only')}
-                                                className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors ${livingWith.includes('females-only')
+                                                className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors max-md:flex max-md:items-center max-md:justify-start max-md:gap-1 ${livingWith.includes('females-only')
                                                     ? 'border-teal-600 bg-teal-50 text-teal-700'
                                                     : 'border-forest'
                                                     }`}
                                             >
-                                                <Icon icon="mdi:gender-female" className="w-6 h-6" />
-                                                <span>Available for women only</span>
+                                                <Icon icon="mdi:gender-female" className="w-5 h-5 sm:w-6 sm:h-6" />
+                                                <span className="text-sm sm:text-base">Available for women only</span>
                                                 {livingWith.includes('females-only') && (
-                                                    <Icon icon="mdi:check" className="w-5 h-5 text-teal-600 ml-auto" />
+                                                    <Icon icon="mdi:check" className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 ml-auto" />
                                                 )}
                                             </button>
-
                                         </div>
-
                                     )}
 
                                     <button
                                         onClick={() => handleLivingWithToggle('pets')}
-                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors ${livingWith.includes('pets')
+                                        className={`w-full p-3 rounded-lg border-2 flex items-center space-x-3 bg-forest-light text-forest transition-colors max-md:flex max-md:items-center max-md:justify-start max-md:gap-1 ${livingWith.includes('pets')
                                             ? 'border-teal-600 bg-teal-50 text-teal-700'
                                             : 'border-forest'
                                             }`}

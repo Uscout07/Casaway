@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NavBar from "./components/header";
 import Footer from "./components/footer";
+import MobileNav from "./components/mobileNav";
 
 
 const inter = Inter({
@@ -23,10 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} font-sans antialiased`}
+        className={`${inter.variable} font-sans antialiased max-md:h-full w-full overflow-x-hidden m-0 p-0`}
       >
         <NavBar />
         {children}
+        <MobileNav/>
         <Footer />
       </body>
     </html>

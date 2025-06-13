@@ -1,8 +1,8 @@
-// app/chat/[id]/page.tsx
+// app/chat/[id]/page.tsx - Responsive Chat Page
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Icon } from '@iconify/react'; // Ensure you have @iconify/react installed
+import { Icon } from '@iconify/react';
 
 interface UserPopulated {
     _id: string;
@@ -16,7 +16,7 @@ interface Chat {
     members: UserPopulated[];
     isGroup: boolean;
     lastMessage?: string;
-    messages: string[]; // This will be populated with Message objects later
+    messages: string[];
     createdAt: string;
     updatedAt: string;
 }
@@ -40,13 +40,11 @@ const ChatPage = () => {
     const [loadingChat, setLoadingChat] = useState(true);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
     const [newMessageContent, setNewMessageContent] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-    // Fetch chat details and messages on component mount or chatId change
     useEffect(() => {
         if (!chatId) {
             setError("Chat ID is missing.");
@@ -58,7 +56,6 @@ const ChatPage = () => {
         fetchMessages();
     }, [chatId]);
 
-    // Auto-scroll to the bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -68,7 +65,7 @@ const ChatPage = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                router.push('/login'); // Redirect to login if no token
+                router.push('/auth');
                 throw new Error('No authentication token found.');
             }
 
@@ -96,7 +93,7 @@ const ChatPage = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                router.push('/login'); // Redirect to login if no token
+                router.push('/auth');
                 throw new Error('No authentication token found.');
             }
 
@@ -119,7 +116,6 @@ const ChatPage = () => {
         }
     };
 
-    // Determine the name and profile pic of the other person in the chat
     const getOtherChatMember = () => {
         if (!chat || !chat.members) return { name: '...', profilePic: '/images/default-avatar.jpg' };
 
@@ -138,7 +134,6 @@ const ChatPage = () => {
         return otherMember ? { name: otherMember.name, profilePic: otherMember.profilePic || '/images/default-avatar.jpg' } : { name: 'Chat', profilePic: '/images/default-avatar.jpg' };
     };
 
-    // Function to handle sending a new message
     const handleSendMessage = async () => {
         if (!newMessageContent.trim() || !chatId) {
             alert("Message content cannot be empty.");
@@ -148,7 +143,7 @@ const ChatPage = () => {
         const token = localStorage.getItem('token');
         if (!token) {
             alert("Please log in to send messages.");
-            router.push('/login');
+            router.push('/auth');
             return;
         }
 
@@ -167,9 +162,9 @@ const ChatPage = () => {
 
             if (response.ok) {
                 const sentMessage = await response.json();
-                setMessages(prevMessages => [...prevMessages, sentMessage]); // Add the new message to state
-                setNewMessageContent(''); // Clear the input field
-                setError(null); // Clear any previous errors
+                setMessages(prevMessages => [...prevMessages, sentMessage]);
+                setNewMessageContent('');
+                setError(null);
             } else {
                 const errorData = await response.json();
                 throw new Error(errorData.msg || 'Failed to send message.');
@@ -180,9 +175,7 @@ const ChatPage = () => {
             alert(`Error sending message: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
     };
-     
 
-    // Function to handle Enter key press
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             handleSendMessage();
@@ -191,7 +184,6 @@ const ChatPage = () => {
 
     const { name: chatPartnerName, profilePic: chatPartnerProfilePic } = getOtherChatMember();
 
-    // A more robust way to get logged-in user's ID for styling messages
     const loggedInUserString = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     let loggedInUserId: string | null = null;
     if (loggedInUserString) {
@@ -202,26 +194,25 @@ const ChatPage = () => {
         }
     }
 
-
     if (loadingChat || loadingMessages) {
         return (
             <div className="flex-1 flex items-center justify-center bg-ambient text-forest h-screen">
-                <Icon icon="line-md:loading-loop" className="w-12 h-12 text-forest" />
-                <p className="ml-2">Loading chat...</p>
+                <Icon icon="line-md:loading-loop" className="w-8 h-8 sm:w-12 sm:h-12 text-forest" />
+                <p className="ml-2 text-sm sm:text-base">Loading chat...</p>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center text-center bg-ambient text-red-500 mb-5">
+            <div className="flex flex-col items-center justify-center text-center bg-ambient text-red-500 p-4">
                 <div className='pt-2'>
-                    <Icon icon="material-symbols:error-outline" className="w-12 h-12 mb-4 mx-auto" />
-                    <p className="text-[15px] font-semibold mb-2">Error Loading Chat</p>
-                    <p>{error}</p>
+                    <Icon icon="material-symbols:error-outline" className="w-10 h-10 sm:w-12 sm:h-12 mb-4 mx-auto" />
+                    <p className="text-sm sm:text-base font-semibold mb-2">Error Loading Chat</p>
+                    <p className="text-xs sm:text-sm px-4">{error}</p>
                     <button
                         onClick={() => router.back()}
-                        className="mt-4 px-4 py-2 bg-forest text-white rounded-lg hover:bg-pine"
+                        className="mt-4 px-4 py-2 bg-forest text-white rounded-lg hover:bg-pine text-sm"
                     >
                         Go Back
                     </button>
@@ -232,67 +223,78 @@ const ChatPage = () => {
 
     if (!chat) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-ambient text-forest h-screen">
-                <p>Chat not found.</p>
+            <div className="flex-1 flex flex-col items-center justify-center bg-ambient text-forest h-screen p-4">
+                <p className="text-sm sm:text-base mb-4">Chat not found.</p>
                 <button
                     onClick={() => router.back()}
-                    className="mt-4 px-4 py-2 bg-forest text-white rounded-lg hover:bg-pine"
+                    className="px-4 py-2 bg-forest text-white rounded-lg hover:bg-pine text-sm"
                 >
                     Go Back
                 </button>
             </div>
         );
     }
-    console.log(chatPartnerProfilePic);
-    return (
-        // The main container for the chat section now takes full viewport height
-        <div className="h-full flex flex-col px-4 pb-5 bg-ambient border-l border-gray-200 relative"> {/* Added h-screen */}
 
-            {/* Chat Header (Jane Dallas / Michael San Francisco) */}
-            <div className="flex items-center space-x-4 mb-4 pb-4 border-b border-gray-200 flex-shrink-0"> {/* Added flex-shrink-0 */}
-                {chatPartnerProfilePic != "" ? (
-    <img
-        src={chatPartnerProfilePic}
-        alt="Chat Partner Avatar"
-        className="w-16 h-16 rounded-full object-cover"
-    />
-) : (
-    <Icon icon="mdi:account-circle" className="w-16 h-16 text-gray-400" />
-)}
-                <h2 className="text-[18px] font-semibold text-slate-800 leading-none">
+    return (
+        <div className="h-full flex flex-col bg-ambient border-l border-gray-200 relative">
+            {/* Mobile Back Button */}
+            <div className="lg:hidden flex items-center p-2 border-b border-gray-200 bg-ambient">
+                <button
+                    onClick={() => router.back()}
+                    className="p-2 text-forest hover:bg-gray-100 rounded-full mr-2"
+                >
+                    <Icon icon="heroicons:arrow-left" className="h-5 w-5" />
+                </button>
+            </div>
+
+            {/* Chat Header - Responsive */}
+            <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 border-b border-gray-200 flex-shrink-0 bg-ambient">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden flex-shrink-0">
+                    {chatPartnerProfilePic && chatPartnerProfilePic !== "" ? (
+                        <img
+                            src={chatPartnerProfilePic}
+                            alt="Chat Partner Avatar"
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <Icon icon="mdi:account-circle" className="w-full h-full text-gray-400" />
+                    )}
+                </div>
+                <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-800 truncate">
                     {chatPartnerName}
                 </h2>
             </div>
-           
-            {/* Message Area - This is the scrollable part */}
-            <div className="min-h-[80%] bg-ambient px-4 pb-10 rounded-lg  overflow-y-auto space-y-1 hideScrollbar"> {/* flex-1 ensures it fills remaining space */}
+
+            {/* Message Area - Responsive */}
+            <div className="flex-1 bg-ambient px-2 sm:px-4 py-2 sm:py-4 overflow-y-auto space-y-2 sm:space-y-3 pb-20 sm:pb-24">
                 {messages.length === 0 ? (
-                    <p className="text-center text-slate flex-grow flex items-center justify-center">No messages yet. Start the conversation!</p>
+                    <div className="h-full flex items-center justify-center">
+                        <p className="text-center text-slate-500 text-sm sm:text-base px-4">
+                            No messages yet. Start the conversation!
+                        </p>
+                    </div>
                 ) : (
                     messages.map(msg => (
                         <div
                             key={msg._id}
                             className={`flex ${msg.sender._id === loggedInUserId ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`py-2 px-4 rounded-xl max-w-[70%] shadow
-                                ${msg.sender._id === loggedInUserId ? 'bg-forest text-white' : 'bg-white text-black'}`
+                            <div className={`py-2 sm:py-3 px-3 sm:px-4 rounded-xl max-w-[85%] sm:max-w-[75%] lg:max-w-[70%] shadow-sm
+                                ${msg.sender._id === loggedInUserId ? 'bg-forest text-white' : 'bg-white text-black border'}`
                             }>
                                 {msg.sender._id !== loggedInUserId && (
-                                    <div className="font-semibold text-[10px] mb-1">
+                                    <div className="font-semibold text-xs mb-1 text-gray-600">
                                         {msg.sender.name}
                                     </div>
                                 )}
-                                <p className="break-words text-[16px] font-normal leading-tight">{msg.content}</p>
+                                <p className="break-words text-sm sm:text-base font-normal leading-tight">
+                                    {msg.content}
+                                </p>
                                 <div className={`text-xs mt-1 text-right
-                                    ${msg.sender._id === loggedInUserId ? 'text-gray-100' : 'text-slate/40'}`
+                                    ${msg.sender._id === loggedInUserId ? 'text-gray-200' : 'text-gray-500'}`
                                 }>
                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </div>
-                                {/* {msg.sender._id === loggedInUserId && (
-                                    <div className="text-xs mt-1 text-right text-forest">
-                                        Seen just now
-                                    </div>
-                                )} */}
                             </div>
                         </div>
                     ))
@@ -300,26 +302,29 @@ const ChatPage = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input Area */}
-            <div className="mt-4 flex px-5 items-center absolute bottom-3 w-[97%] bg-white rounded-[20px] shadow-md p-2 flex-shrink-0"> {/* Added flex-shrink-0 */}
+            {/* Message Input Area - Responsive */}
+            <div className="absolute bottom-2 sm:bottom-3 left-2 right-2 sm:left-4 sm:right-4 bg-white rounded-2xl shadow-lg border border-gray-200 flex items-center p-2 sm:p-3 flex-shrink-0">
                 <input
                     type="text"
                     placeholder="Write a Message"
-                    className="flex-1 border-none bg-transparent p-3 text-black text-[15px] font-medium focus:outline-none"
+                    className="flex-1 border-none bg-transparent px-2 sm:px-3 py-2 text-black text-sm sm:text-base font-medium focus:outline-none"
                     value={newMessageContent}
                     onChange={(e) => setNewMessageContent(e.target.value)}
                     onKeyPress={handleKeyPress}
                 />
-                {/* Paperclip icon */}
-                <button className="p-2 text-forest hover:bg-gray-100 rounded-full">
-                    <Icon icon="heroicons:paper-clip" className="h-8 w-8" />
+                
+                {/* Attachment button - Hidden on very small screens */}
+                <button className="hidden sm:block p-2 text-forest hover:bg-gray-100 rounded-full transition-colors">
+                    <Icon icon="heroicons:paper-clip" className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
-                {/* Send button */}
+                
+                {/* Send button - Responsive size */}
                 <button
                     onClick={handleSendMessage}
-                    className="bg-forest w-12 h-12 rounded-full flex items-center justify-center text-white hover:bg-pine ml-2"
+                    className="bg-forest w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-white hover:bg-pine ml-2 transition-colors flex-shrink-0"
+                    disabled={!newMessageContent.trim()}
                 >
-                    <Icon icon="mingcute:send-fill" className="w-7 h-7" />
+                    <Icon icon="mingcute:send-fill" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                 </button>
             </div>
         </div>
