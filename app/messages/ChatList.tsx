@@ -126,7 +126,7 @@ const ChatList: React.FC = () => {
     }, [loggedInUserId, isClient, API_BASE_URL, router]);
 
     const handleChatClick = (chatId: string) => {
-        router.push(`/chat/${chatId}`);
+        router.push(`/messages/${chatId}`);
     };
 
     const getOtherMemberInfo = (chat: Chat) => {
