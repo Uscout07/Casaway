@@ -81,7 +81,7 @@ export default function NavBar() {
       <img
         src={user.profilePic}
         alt="Profile"
-        className="w-full h-full object-cover"
+        className="max-md:w-[40px] max-md:h-[40px] w-[32px] h-[32px] object-cover"
         onError={() => setImageError(true)} // 👈 Important
       />
     );
