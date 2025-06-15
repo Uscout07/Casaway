@@ -1,4 +1,3 @@
-// components/CreatePostForm.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
@@ -22,11 +21,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [cityInput, setCityInput] = useState(initialCity);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Image upload state (matching page.tsx)
   const [selectedImages, setSelectedImages] = useState<any[]>([]);
 
-  // Initialize with initial image if provided
   useEffect(() => {
     if (initialImageUrl) {
       const initialImage = {
@@ -38,14 +34,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     }
   }, [initialImageUrl]);
 
-  // Update country and city when props change
-  useEffect(() => {
-    setCountryInput(initialCountry);
-  }, [initialCountry]);
-
-  useEffect(() => {
-    setCityInput(initialCity);
-  }, [initialCity]);
+  useEffect(() => setCountryInput(initialCountry), [initialCountry]);
+  useEffect(() => setCityInput(initialCity), [initialCity]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
@@ -79,8 +69,6 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     setError(null);
 
     const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-    
-    // Convert images to URLs (first image as main imageUrl)
     const imageUrls = selectedImages.map(img => img.url);
 
     const postData = {
@@ -88,12 +76,11 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
       tags: tagsArray,
       city: cityInput,
       country: countryInput,
-      imageUrl: imageUrls[0] || '', // Main image
-      images: imageUrls, // All images
-      status // Add status field
+      imageUrl: imageUrls[0] || '',
+      images: imageUrls,
+      status
     };
 
-    // Validation
     if (!imageUrls[0]) {
       setError('At least one image is required for the post.');
       setIsLoading(false);
@@ -117,7 +104,6 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
@@ -129,10 +115,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Post created successfully:', result);
         alert(`Post ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
-        
-        // Clear form fields on success
         setCaption('');
         setTagsInput('');
         setSelectedImages([]);
@@ -150,12 +133,11 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-row justify-evenly">
+    <div className="w-full max-w-full mx-auto bg-ambient rounded-xl px-4 py-6 sm:px-6 space-y-6 flex max-md:flex-col items-center md:items-start justify-evenly">
       {/* Left side - Image Upload */}
-      <div className="p-4 w-1/3 flex flex-col space-y-6">
-        {/* Image Upload Section */}
-        <div className="bg-white min-w-[460px] min-h-[340px] rounded-lg p-6 flex flex-col items-center justify-center text-center mb-4">
-          <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-teal-600 mx-auto mb-4" />
+      <div className="w-full flex flex-col">
+        <div className="bg-white w-[300px] md:w-[400px] aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+          <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-forest-medium mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Upload Images for Your Post</p>
           <input
             type="file"
@@ -167,13 +149,12 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
           />
           <label
             htmlFor="post-image-upload"
-            className="w-[460px] h-[340px] absolute z-20 opacity-0 cursor-pointer"
+            className="absolute top-0 left-0 w-full h-full z-10 cursor-pointer"
           >
-            Choose Images
+            <span className="sr-only">Choose Images</span>
           </label>
         </div>
 
-        {/* Selected Images Display */}
         {selectedImages.length > 0 && (
           <div>
             <p className="text-sm text-gray-600 mb-3">Selected Images ({selectedImages.length}/10):</p>
@@ -199,11 +180,11 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
       </div>
 
       {/* Right side - Form */}
-      <div className="px-4 pb-4 pt-0 w-1/2 space-y-6">
-        <div className="bg-ambient rounded-lg px-6 pt-0 space-y-4">
+      <div className="w-full max-w-[800px] space-y-6">
+        <div className="bg-ambient rounded-lg px-4 pb-6 sm:px-6 space-y-4 w-full">
 
           {/* Country Input */}
-          <div>
+          <div className='w-full'>
             <label htmlFor="post-country" className="block text-sm font-medium text-gray-800 mb-2">
               Country <span className="text-red-500">*</span>
             </label>
@@ -268,7 +249,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           {/* Action Buttons */}
-          <div className="flex space-x-4 pt-4">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               onClick={() => handleSubmitPost('draft')}
               disabled={isLoading}

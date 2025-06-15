@@ -55,7 +55,7 @@ const SearchBar: React.FC<Props> = ({
   };
 
   return (
-    <div className="flex relative items-center justify-center pt-4 pb-10">
+    <div className="flex relative items-center justify-center pb-10">
       <div className="relative w-[312px] lg:w-[735px]">
         <Icon
           icon="mdi:search"
