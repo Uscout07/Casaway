@@ -2,6 +2,8 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
+import StoryUpload from './components/storyUpload';
+import StoryFeed from './components/storyFeed';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
 import { useParams, useRouter } from 'next/navigation';
@@ -12,7 +14,7 @@ import { Listing } from './types'; // <--- Crucial: Ensure this is correctly imp
 
 export default function HomePage() {
   const router = useRouter();
-  const API_BASE_URL = "https://casaway-backend.onrender.com";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 
   // ── AUTOCOMPLETE STATE ──
@@ -248,6 +250,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-ambient pt-[11vh]">
+      <StoryFeed/>
       <SearchBar
         destinationInput={destinationInput}
         setDestinationInput={val => {
