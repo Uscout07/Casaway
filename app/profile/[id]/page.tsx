@@ -279,7 +279,7 @@ const ProfilePage = () => {
     }
 
     return (
-        <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter">
+        <div className="min-h-screen pt-[10vh] bg-ambient text-forest font-inter w-screen">
             {user && (
                 <ProfileHeader
                     user={user}

@@ -9,7 +9,7 @@ interface ProfileErrorDisplayProps {
 
 const ProfileErrorDisplay: React.FC<ProfileErrorDisplayProps> = ({ errorMessage, onRetry }) => {
     return (
-        <div className="min-h-screen flex items-center justify-center text-center bg-ambient">
+        <div className="min-h-screen flex items-center justify-center text-center bg-ambient w-full">
             <div className="text-red-600">
                 <Icon icon="material-symbols:error-outline" className="w-12 h-12 mb-4 mx-auto" />
                 <p className="text-lg font-semibold mb-2">Error Loading Profile</p>

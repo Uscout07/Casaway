@@ -201,7 +201,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-2 sm:p-4 lg:p-8">
+    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-2 sm:p-4 lg:p-8 mb-2">
       {/* Story Content Area */}
       <div className="relative w-full h-full max-w-xl max-h-[90vh] bg-gray-900 rounded-lg overflow-hidden flex flex-col">
         {/* Close Button */}

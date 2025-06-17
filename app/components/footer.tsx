@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react"
 
 export default function Footer() {
     return (
-        <footer className="bg-forest-medium text-white py-12 px-6 mt-16 w-full overflow-hidden">
+        <footer className="bg-forest-medium text-white py-12 px-6 mt-16 w-screen overflow-hidden">
             <div className="max-w-7xl mx-auto">
                 {/* Main Footer Content */}
                 <div className="flex items-center justify-between mb-8">

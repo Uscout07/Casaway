@@ -3,7 +3,7 @@ import React from 'react';
 
 const ProfileLoadingSkeleton: React.FC = () => {
     return (
-        <div className="min-h-screen pt-[10vh] bg-ambient">
+        <div className="min-h-screen pt-[10vh] bg-ambient w-full">
             <div className="animate-pulse flex flex-col items-center justify-center py-10">
                 {/* Header Skeleton */}
                 <div className="w-screen flex flex-col lg:flex-row items-center justify-evenly mb-12">
