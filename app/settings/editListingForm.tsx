@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Icon } from '@iconify/react';
-// Removed useRouter and useSearchParams as it's no longer a standalone page
+// Iconify/react removed to resolve compilation error
 
 interface AvailabilityPeriod {
     startDate: string; // Will be ISO string like "YYYY-MM-DD" from date input
@@ -262,13 +261,13 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
     }
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md mb-8">
-            <h2 className="text-3xl font-bold text-forest mb-6 text-center">Edit Listing: {listing?.title}</h2>
+        <div className="p-2 sm:p-6 bg-white rounded-lg  mb-8 max-w-full md:max-w-4xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-bold text-forest mb-6 text-center">Edit Listing: {listing?.title}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Details */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Basic Details</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Basic Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
@@ -338,7 +337,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
                 {/* Amenities */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Amenities</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Amenities</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {availableAmenities.map(amenity => (
                             <div key={amenity} className="flex items-center">
@@ -359,7 +358,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
                 {/* Roommate Preferences */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Roommate Preferences</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Roommate Preferences</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {roommateOptions.map(option => (
                             <div key={option} className="flex items-center">
@@ -380,7 +379,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
                 {/* Tags (Features) */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Additional Features (Tags)</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Additional Features (Tags)</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {commonTags.map(tag => (
                             <div key={tag} className="flex items-center">
@@ -401,7 +400,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
                 {/* Images */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Images</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Images</h3>
                     <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">Thumbnail URL</label>
                     <input
                         type="text"
@@ -430,7 +429,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
                                 onClick={() => removeImageField(index)}
                                 className="p-2 text-coral hover:text-red-800 rounded-full transition-colors"
                             >
-                                <Icon icon="mdi:close-circle" className="w-6 h-6" />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m3.707 6.293a1 1 0 0 0-1.414 0L12 10.586L9.707 8.293a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 0 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0 0-1.414Z"/></svg>
                             </button>
                         </div>
                     ))}
@@ -439,36 +438,36 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
                         onClick={addImageField}
                         className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200"
                     >
-                        <Icon icon="mdi:plus" className="w-5 h-5" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4c4.418 0 8 3.582 8 8s-3.582 8-8 8s-8-3.582-8-8s3.582-8 8-8m0 2a6 6 0 1 0 0 12a6 6 0 0 0 0-12m1 5h2v2h-2v2h-2v-2H9v-2h2V9h2v2Z"/></svg>
                         <span>Add Image URL</span>
                     </button>
                 </div>
 
                 {/* Availability Dates */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Availability</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Availability</h3>
                     {/* Ensure formData.availability is an array and has even length for pairs */}
                     {(formData.availability || []).map((period, index) => (
-                        <div key={index} className="flex items-center space-x-2 mb-2">
+                        <div key={index} className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
                             <input
                                 type="date"
                                 value={period.startDate || ''}
                                 onChange={(e) => handleAvailabilityChange(e, index, 'startDate')}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
+                                className="block w-full sm:w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
                             />
                             <span className="text-gray-600">-</span>
                             <input
                                 type="date"
                                 value={period.endDate || ''}
                                 onChange={(e) => handleAvailabilityChange(e, index, 'endDate')}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
+                                className="block w-full sm:w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
                             />
                             <button
                                 type="button"
                                 onClick={() => removeAvailabilityPeriod(index)}
                                 className="p-2 text-coral hover:text-red-800 rounded-full transition-colors"
                             >
-                                <Icon icon="mdi:close-circle" className="w-6 h-6" />
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m3.707 6.293a1 1 0 0 0-1.414 0L12 10.586L9.707 8.293a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 0 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0 0-1.414Z"/></svg>
                             </button>
                         </div>
                     ))}
@@ -477,15 +476,15 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
                         onClick={addAvailabilityPeriod}
                         className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200"
                     >
-                        <Icon icon="mdi:plus" className="w-5 h-5" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4c4.418 0 8 3.582 8 8s-3.582 8-8 8s-8-3.582-8-8s3.582-8 8-8m0 2a6 6 0 1 0 0 12a6 6 0 0 0 0-12m1 5h2v2h-2v2h-2v-2H9v-2h2V9h2v2Z"/></svg>
                         <span>Add Availability Period</span>
                     </button>
-                    <p className="text-sm text-gray-500 mt-2">Enter dates in YYYY-MM-DD format.</p>
+                    <p className="text-sm text-gray-500 mt-2">Enter dates inYYYY-MM-DD format.</p>
                 </div>
 
                 {/* Status */}
                 <div>
-                    <h3 className="text-2xl font-semibold text-forest mb-4">Status</h3>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Status</h3>
                     <select
                         id="status"
                         name="status"

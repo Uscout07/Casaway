@@ -48,6 +48,7 @@ const SettingsPage = () => {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'listing' | 'post' | 'account'; id?: string } | null>(null);
   const [editingListingId, setEditingListingId] = useState<string | null>(null); // New state for editing
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu state
 
   // Profile edit states
   const [profileData, setProfileData] = useState({
@@ -298,273 +299,314 @@ const fetchUserData = async () => {
     fetchListings(); // Refresh the list of listings after successful edit
   };
 
+  // Handle tab change with mobile menu closing
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setEditingListingId(null);
+    setIsMobileMenuOpen(false); // Close mobile menu when tab changes
+  };
+
+  const tabItems = [
+    { id: 'profile', icon: 'mdi:account-outline', label: 'Profile' },
+    { id: 'listings', icon: 'mdi:home-city-outline', label: 'My Listings' },
+    { id: 'posts', icon: 'mdi:post-outline', label: 'My Posts' },
+    { id: 'security', icon: 'mdi:security', label: 'Security' },
+    { id: 'notifications', icon: 'mdi:bell-outline', label: 'Notifications' }
+  ];
 
   return (
     <div className="min-h-screen bg-ambient font-inter pt-[10vh]">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center text-forest mb-10">Account Settings</h1>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-forest mb-6 sm:mb-8 lg:mb-10">
+          Account Settings
+        </h1>
 
-        <div className="flex flex-col lg:flex-row bg-white rounded-lg shadow-xl overflow-hidden">
-          {/* Sidebar Navigation */}
-          <div className="lg:w-1/4 bg-forest-medium p-6 flex flex-col space-y-4">
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          {/* Mobile Header with Menu Toggle */}
+          <div className="lg:hidden bg-forest-medium p-4 flex items-center justify-between">
+            <h2 className="text-white font-semibold text-lg">
+              {tabItems.find(item => item.id === activeTab)?.label}
+            </h2>
             <button
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
-                ${activeTab === 'profile' ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
-              onClick={() => { setActiveTab('profile'); setEditingListingId(null); }} // Close edit form when changing tabs
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-white p-2 rounded-md hover:bg-forest-light hover:text-forest transition-colors"
             >
-              <Icon icon="mdi:account-outline" className="w-6 h-6" />
-              <span className="font-medium">Profile</span>
-            </button>
-            <button
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
-                ${activeTab === 'listings' ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
-              onClick={() => setActiveTab('listings')}
-            >
-              <Icon icon="mdi:home-city-outline" className="w-6 h-6" />
-              <span className="font-medium">My Listings</span>
-            </button>
-            <button
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
-                ${activeTab === 'posts' ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
-              onClick={() => { setActiveTab('posts'); setEditingListingId(null); }} // Close edit form when changing tabs
-            >
-              <Icon icon="mdi:post-outline" className="w-6 h-6" />
-              <span className="font-medium">My Posts</span>
-            </button>
-            <button
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
-                ${activeTab === 'security' ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
-              onClick={() => { setActiveTab('security'); setEditingListingId(null); }} // Close edit form when changing tabs
-            >
-              <Icon icon="mdi:security" className="w-6 h-6" />
-              <span className="font-medium">Security</span>
-            </button>
-            <button
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
-                ${activeTab === 'notifications' ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
-              onClick={() => { setActiveTab('notifications'); setEditingListingId(null); }} // Close edit form when changing tabs
-            >
-              <Icon icon="mdi:bell-outline" className="w-6 h-6" />
-              <span className="font-medium">Notifications</span>
+              <Icon icon={isMobileMenuOpen ? "mdi:close" : "mdi:menu"} className="w-6 h-6" />
             </button>
           </div>
 
-          {/* Main Content Area */}
-          <div className="lg:w-3/4 p-8">
-            {loading && (
-              <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-                <p className="text-forest text-lg">Loading...</p>
+          <div className="flex flex-col lg:flex-row">
+            {/* Desktop Sidebar Navigation */}
+            <div className="hidden lg:flex lg:w-1/4 bg-forest-medium p-6 flex-col space-y-4">
+              {tabItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
+                    ${activeTab === item.id ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
+                  onClick={() => handleTabChange(item.id)}
+                >
+                  <Icon icon={item.icon} className="w-6 h-6" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Navigation Menu */}
+            {isMobileMenuOpen && (
+              <div className="lg:hidden bg-forest-medium border-t border-forest-light">
+                <div className="px-4 py-2 space-y-1">
+                  {tabItems.map((item) => (
+                    <button
+                      key={item.id}
+                      className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors duration-200
+                        ${activeTab === item.id ? 'bg-forest-light text-forest' : 'text-white hover:bg-forest-light hover:text-forest'}`}
+                      onClick={() => handleTabChange(item.id)}
+                    >
+                      <Icon icon={item.icon} className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="space-y-6">
-                <h2 className="text-3xl font-semibold text-forest mb-6">Profile Settings</h2>
-                <form onSubmit={handleProfileSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={profileData.name}
-                      onChange={handleProfileChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                    />
-                    {errors.name && <p className="text-coral text-xs mt-1">{errors.name}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <input
-                      type="text"
-                      id="phone"
-                      name="phone"
-                      value={profileData.phone}
-                      onChange={handleProfileChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                    />
-                    {errors.phone && <p className="text-coral text-xs mt-1">{errors.phone}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700">Profile Picture URL</label>
-                    <input
-                      type="text"
-                      id="profilePic"
-                      name="profilePic"
-                      value={profileData.profilePic}
-                      onChange={handleProfileChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                    />
-                    {errors.profilePic && <p className="text-coral text-xs mt-1">{errors.profilePic}</p>}
-                    {profileData.profilePic && (
-                      <img src={profileData.profilePic} alt="Profile Preview" className="mt-4 w-24 h-24 rounded-full object-cover" />
+            {/* Main Content Area */}
+            <div className="flex-1 lg:w-3/4 p-4 sm:p-6 lg:p-8 relative">
+              {loading && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+                  <p className="text-forest text-lg">Loading...</p>
+                </div>
+              )}
+
+              {/* Profile Tab */}
+              {activeTab === 'profile' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4 sm:mb-6">Profile Settings</h2>
+                  <form onSubmit={handleProfileSubmit} className="space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="sm:col-span-2">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          value={profileData.name}
+                          onChange={handleProfileChange}
+                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                        />
+                        {errors.name && <p className="text-coral text-xs mt-1">{errors.name}</p>}
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input
+                          type="text"
+                          id="phone"
+                          name="phone"
+                          value={profileData.phone}
+                          onChange={handleProfileChange}
+                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                        />
+                        {errors.phone && <p className="text-coral text-xs mt-1">{errors.phone}</p>}
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700 mb-1">Profile Picture URL</label>
+                        <input
+                          type="text"
+                          id="profilePic"
+                          name="profilePic"
+                          value={profileData.profilePic}
+                          onChange={handleProfileChange}
+                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                        />
+                        {errors.profilePic && <p className="text-coral text-xs mt-1">{errors.profilePic}</p>}
+                        {profileData.profilePic && (
+                          <div className="mt-4 flex justify-center sm:justify-start">
+                            <img src={profileData.profilePic} alt="Profile Preview" className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {errors.general && <p className="text-coral text-sm mt-2">{errors.general}</p>}
+                    <div className="flex justify-center sm:justify-start">
+                      <button
+                        type="submit"
+                        className="w-full sm:w-auto bg-forest-medium hover:forest text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200"
+                        disabled={loading}
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {/* My Listings Tab */}
+              {activeTab === 'listings' && (
+                editingListingId ? (
+                  <EditListingForm
+                    listingId={editingListingId}
+                    onCancel={handleEditFormCancel}
+                    onSuccess={handleEditFormSuccess}
+                  />
+                ) : (
+                  <UserListingsSection
+                    listings={listings}
+                    loading={loading}
+                    onDeleteListing={deleteListing}
+                    onShowDeleteConfirm={setShowDeleteConfirm}
+                    onEditListing={handleEditListing}
+                  />
+                )
+              )}
+
+              {/* My Posts Tab */}
+              {activeTab === 'posts' && (
+                editingPostId ? (
+                  <EditPostForm
+                    postId={editingPostId}
+                    onCancel={() => setEditingPostId(null)}
+                    onSuccess={() => {
+                      setEditingPostId(null);
+                      fetchPosts();
+                    }}
+                  />
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <h2 className="text-2xl sm:text-3xl font-semibold text-forest">My Posts</h2>
+                      <Link href="/UploadListingPage?mode=post">
+                        <button className="w-full sm:w-auto bg-forest-medium hover:forest text-white py-2 px-4 rounded-lg flex items-center justify-center sm:justify-start">
+                          <Icon icon="mdi:plus" className="w-5 h-5 mr-2" />
+                          Create New Post
+                        </button>
+                      </Link>
+                    </div>
+
+                    {posts.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Icon icon="mdi:post-outline" className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-600 text-lg">
+                          You haven't created any posts yet.
+                        </p>
+                        <Link href="/UploadListingPage?mode=post">
+                          <button className="mt-4 text-forest-medium hover:text-forest font-medium">
+                            Create your first post
+                          </button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        {posts.map(post => (
+                          <div key={post._id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                            <img
+                              src={post.imageUrl}
+                              alt="Post"
+                              className="w-full h-48 sm:h-56 object-cover"
+                            />
+                            <div className="p-4">
+                              <h3 className="font-bold text-gray-800 mb-2 line-clamp-2 text-sm sm:text-base">
+                                {post.caption}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-1">
+                                {post.city}, {post.country}
+                              </p>
+                              <div className="flex justify-end gap-3">
+                                <button
+                                  onClick={() => setEditingPostId(post._id)}
+                                  className="text-forest-medium hover:text-forest transition-colors p-1"
+                                >
+                                  <Icon icon="mdi:pencil" className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => setShowDeleteConfirm({ type: 'post', id: post._id })}
+                                  className="text-coral/90 hover:text-red-800 transition-colors p-1"
+                                >
+                                  <Icon icon="mdi:delete" className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {errors.general && <p className="text-coral text-sm mt-2">{errors.general}</p>}
-                  <button
-                    type="submit"
-                    className="bg-forest-medium hover:forest text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200"
-                    disabled={loading}
-                  >
-                    Save Changes
-                  </button>
-                </form>
-              </div>
-            )}
+                )
+              )}
 
-            {/* My Listings Tab */}
-            {activeTab === 'listings' && (
-              editingListingId ? (
-                <EditListingForm
-                  listingId={editingListingId}
-                  onCancel={handleEditFormCancel}
-                  onSuccess={handleEditFormSuccess}
-                />
-              ) : (
-                <UserListingsSection
-                  listings={listings}
-                  loading={loading}
-                  onDeleteListing={deleteListing}
-                  onShowDeleteConfirm={setShowDeleteConfirm}
-                  onEditListing={handleEditListing} // Pass the new handler
-                />
-              )
-            )}
-
-            {/* My Posts Tab */}
-            {activeTab === 'posts' && (
-              editingPostId ? (
-                <EditPostForm
-                  postId={editingPostId}
-                  onCancel={() => setEditingPostId(null)}
-                  onSuccess={() => {
-                    setEditingPostId(null);
-                    fetchPosts();
-                  }}
-                />
-              ) : (
+              {/* Security Tab */}
+              {activeTab === 'security' && (
                 <div className="space-y-6">
-                  <h2 className="text-3xl font-semibold text-forest mb-6">My Posts</h2>
-
-                  {posts.length === 0 ? (
-                    <p className="text-gray-600 text-center py-8">
-                      You haven't created any posts yet.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {posts.map(post => (
-                        <div key={post._id} className="border border-gray-200 rounded-lg p-4 shadow-sm">
-                          <img
-                            src={post.imageUrl}
-                            alt="Post"
-                            className="w-full h-48 object-cover rounded-md mb-4"
-                          />
-                          <h3 className="font-bold text-gray-800 mb-1 line-clamp-1">
-                            {post.caption}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                            {post.city}, {post.country}
-                          </p>
-                          <div className="flex justify-end gap-2 mt-2">
-                            <button
-                              onClick={() => setEditingPostId(post._id)}
-                              className="text-forest-medium hover:text-forest transition-colors"
-                            >
-                              <Icon icon="mdi:pencil" className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => setShowDeleteConfirm({ type: 'post', id: post._id })}
-                              className="text-coral/90 hover:text-red-800 transition-colors"
-                            >
-                              <Icon icon="mdi:delete" className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <Link href="/UploadListingPage?mode=post">
-                    <button className="mt-6 bg-forest-medium hover:forest text-white py-2 px-4 rounded-lg flex items-center">
-                      <Icon icon="mdi:plus" className="w-5 h-5 mr-2" />
-                      Create New Post
-                    </button>
-                  </Link>
-                </div>
-              )
-            )}
-
-
-
-            {/* Security Tab */}
-            {activeTab === 'security' && (
-              <div className="space-y-6">
-                <h2 className="text-3xl font-semibold text-forest mb-6">Security Settings</h2>
-                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
-                  <div className="flex items-center">
-                    <Icon icon="mdi:warning" className="w-6 h-6 text-coral/90 mr-3" />
-                    <h3 className="text-lg font-bold text-red-800">Danger Zone</h3>
-                  </div>
-                  <p className="mt-2 text-sm text-coral">
-                    Deleting your account is irreversible. All your data, listings, and posts will be permanently removed.
-                  </p>
-                  <button
-                    onClick={() => setShowDeleteConfirm({ type: 'account' })}
-                    className="mt-4 bg-coral/90 hover:bg-coral text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200"
-                  >
-                    Delete My Account
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Notifications Tab */}
-            {activeTab === 'notifications' && (
-              <div className="space-y-6">
-                <h2 className="text-3xl font-semibold text-forest mb-4">Notification Settings</h2>
-                <p className="text-gray-600">Manage your notification preferences here.</p>
-                {/* Example notification settings */}
-                <div className="flex items-center justify-between p-3 border-b border-gray-200 last:border-b-0">
-                  <span className="text-gray-700">Email notifications</span>
-                  <label htmlFor="email-toggle" className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="email-toggle" className="sr-only peer" defaultChecked />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
-                  </label>
-                </div>
-                <div className="flex items-center justify-between p-3 border-b border-gray-200 last:border-b-0">
-                  <span className="text-gray-700">SMS notifications</span>
-                  <label htmlFor="sms-toggle" className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="sms-toggle" className="sr-only peer" />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* User Info (Visible in all tabs, perhaps conditionally render or move) */}
-            <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-xl font-semibold text-forest mb-4">Your Information</h3>
-              {user && (
-                <div className="flex items-center space-x-6">
-                  {user.profilePic ? (
-                    <img src={user.profilePic} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-teal-500" />
-                  ) : (
-                    <Icon icon="mdi:account-circle" className="w-20 h-20 text-gray-400" />
-                  )}
-                  <div>
-                    <p className="text-lg font-medium text-gray-800">{user.name}</p>
-                    <p className="text-gray-600">{user.email}</p>
-                    {user.phone && <p className="text-gray-600">Phone: {user.phone}</p>}
-                    <div className="flex space-x-4 text-sm text-gray-500 mt-2">
-                      <p><strong>Listings:</strong> {listings.length}</p>
-                      <p><strong>Posts:</strong> {posts.length}</p>
-                      <p><strong>Followers:</strong> {user.followers?.length || 0}</p>
-                      <p><strong>Following:</strong> {user.following?.length || 0}</p>
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4 sm:mb-6">Security Settings</h2>
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 sm:p-6 rounded-md">
+                    <div className="flex items-start sm:items-center">
+                      <Icon icon="mdi:warning" className="w-6 h-6 text-coral/90 mr-3 flex-shrink-0 mt-1 sm:mt-0" />
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-red-800 mb-2">Danger Zone</h3>
+                        <p className="text-sm text-coral mb-4">
+                          Deleting your account is irreversible. All your data, listings, and posts will be permanently removed.
+                        </p>
+                        <button
+                          onClick={() => setShowDeleteConfirm({ type: 'account' })}
+                          className="w-full sm:w-auto bg-coral/90 hover:bg-coral text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200"
+                        >
+                          Delete My Account
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
+
+              {/* Notifications Tab */}
+              {activeTab === 'notifications' && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4">Notification Settings</h2>
+                  <p className="text-gray-600 mb-6">Manage your notification preferences here.</p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <span className="text-gray-700 font-medium">Email notifications</span>
+                      <label htmlFor="email-toggle" className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="email-toggle" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <span className="text-gray-700 font-medium">SMS notifications</span>
+                      <label htmlFor="sms-toggle" className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="sms-toggle" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* User Info Section */}
+              <div className="mt-8 p-4 sm:p-6 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="text-lg sm:text-xl font-semibold text-forest mb-4">Your Information</h3>
+                {user && (
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                    <div className="flex-shrink-0">
+                      {user.profilePic ? (
+                        <img src={user.profilePic} alt="Profile" className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-teal-500" />
+                      ) : (
+                        <Icon icon="mdi:account-circle" className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-lg font-medium text-gray-800">{user.name}</p>
+                      <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
+                      {user.phone && <p className="text-gray-600 text-sm sm:text-base">Phone: {user.phone}</p>}
+                      <div className="grid grid-cols-2 sm:flex sm:space-x-6 gap-2 sm:gap-0 text-sm text-gray-500 mt-3">
+                        <p><strong>Listings:</strong> {listings.length}</p>
+                        <p><strong>Posts:</strong> {posts.length}</p>
+                        <p><strong>Followers:</strong> {user.followers?.length || 0}</p>
+                        <p><strong>Following:</strong> {user.following?.length || 0}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

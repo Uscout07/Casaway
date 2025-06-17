@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Icon } from '@iconify/react';
+// Iconify/react removed to resolve compilation error
 
 type EditPostFormProps = {
   postId: string;
@@ -90,20 +90,21 @@ const EditPostForm: React.FC<EditPostFormProps> = ({ postId, onCancel, onSuccess
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-md max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-4">Edit Post</h2>
-      {error && <p className="text-red-500 mb-3">{error}</p>}
+    <div className="bg-white rounded-lg p-4 sm:p-6 shadow-md max-w-full sm:max-w-3xl mx-auto">
+      <h2 className="text-2xl font-semibold mb-4 text-center sm:text-left">Edit Post</h2>
+      {error && <p className="text-red-500 mb-3 text-center sm:text-left">{error}</p>}
 
       {/* Image previews */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
         {selectedImages.map(img => (
-          <div key={img.id} className="relative">
-            <img src={img.url} className="w-20 h-20 object-cover rounded" />
+          <div key={img.id} className="relative w-20 h-20 sm:w-24 sm:h-24">
+            <img src={img.url} alt="Post preview" className="w-full h-full object-cover rounded" />
             <button
               onClick={() => handleImageRemove(img.id)}
-              className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs"
             >
-              <Icon icon="mdi:close" className="w-3 h-3" />
+              {/* Replaced Icon component with inline SVG for a close icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24"><path fill="currentColor" d="M6.4 18.35L5.65 17.6l5.6-5.6l-5.6-5.6l.75-.75l5.6 5.6l5.6-5.6l.75.75l-5.6 5.6l5.6 5.6l-.75.75l-5.6-5.6Z"/></svg>
             </button>
           </div>
         ))}
@@ -112,59 +113,59 @@ const EditPostForm: React.FC<EditPostFormProps> = ({ postId, onCancel, onSuccess
       {/* Form fields */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Country</label>
+          <label className="block text-sm font-medium text-gray-700">Country</label>
           <input
             value={countryInput}
             onChange={e => setCountryInput(e.target.value)}
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">City</label>
+          <label className="block text-sm font-medium text-gray-700">City</label>
           <input
             value={cityInput}
             onChange={e => setCityInput(e.target.value)}
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Caption</label>
+          <label className="block text-sm font-medium text-gray-700">Caption</label>
           <textarea
             rows={3}
             value={caption}
             onChange={e => setCaption(e.target.value)}
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">Tags (comma‑sep)</label>
+          <label className="block text-sm font-medium text-gray-700">Tags (comma‑sep)</label>
           <input
             value={tagsInput}
             onChange={e => setTagsInput(e.target.value)}
-            className="w-full border rounded p-2"
+            className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 mt-6">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
+            className="px-4 py-2 border rounded hover:bg-gray-100 w-full sm:w-auto"
           >
             Cancel
           </button>
           <button
             onClick={() => handleSubmit('draft')}
             disabled={loading}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 w-full sm:w-auto"
           >
             {loading && status==='draft' ? 'Saving...' : 'Save Draft'}
           </button>
           <button
             onClick={() => handleSubmit('published')}
             disabled={loading}
-            className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700"
+            className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 w-full sm:w-auto"
           >
             {loading && status==='published' ? 'Updating...' : 'Update & Publish'}
           </button>
