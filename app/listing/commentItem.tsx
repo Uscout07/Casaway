@@ -25,6 +25,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
     const handleReplySubmit = () => {
         const value = replyInputRef.current?.value.trim();
         if (value) {
+            // Determine parentId based on whether it's a direct reply or a reply to a reply
             const parentId = isReply ? comment.parentCommentId || comment._id : comment._id;
             handleAddComment(value, parentId);
             if (replyInputRef.current) replyInputRef.current.value = '';
@@ -44,8 +45,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
         }, 0);
     };
 
-    const isLikedByUser = comment.isLikedByUser || false;
-    const likesCount = comment.likesCount || 0;
+    // These values now correctly come from the `comment` object, which PostModal is responsible for updating.
+    const isLikedByUser = comment.isLikedByUser ?? false; // Use nullish coalescing for safety
+    const likesCount = comment.likesCount ?? 0; // Use nullish coalescing for safety
 
     const repliesToShow = !isReply && comment.replies ?
         comment.replies.slice(0, visibleRepliesCount) : [];
@@ -90,7 +92,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                         </span>
                     </div>
                     <p className={`text-gray-700 mb-2 ${isReply ? 'text-sm' : 'text-base'}`}>
-                        {comment.text}
+                        {comment.text} {/* Kept as .text as in your original */}
                     </p>
                     <div className={`flex items-center space-x-4 ${isReply ? 'text-xs' : 'text-sm'}`}>
                         <button

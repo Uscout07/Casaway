@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
 import StoryUpload from './components/storyUpload';
-import StoryFeed from './components/storyFeed';
+import StoryFeed from './components/Story/storyFeed';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
 import { useParams, useRouter } from 'next/navigation';

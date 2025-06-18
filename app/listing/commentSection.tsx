@@ -1,6 +1,7 @@
 // components/CommentSection.tsx
 import React, { useRef } from 'react';
 import CommentItem from './commentItem';
+import { Icon } from '@iconify/react'; // Added Icon import
 import { Comment } from './listingPageTypes'; // Assuming you create a types.ts file
 
 interface CommentSectionProps {
@@ -55,6 +56,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({
                 </button>
             </div>
             {comments.length === 0 ? (
+                // Reverted to original "No comments yet" message, but kept Icon if you have it
                 <p className="text-gray-500 text-center py-6">No comments yet. Be the first to comment!</p>
             ) : (
                 comments.map(comment => (
