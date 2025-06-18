@@ -443,7 +443,7 @@ export default function StoryFeed() {
   const myCurrentStoryThumbnail = hasMyStory ? myActiveStories[0].mediaUrl : user.profilePic;
 
   return (
-    <div className="flex gap-4 overflow-x-auto px-6 py-3 no-scrollbar">
+    <div className="flex gap-4 overflow-x-auto px-6 pb-2 no-scrollbar">
       {/* User's Own Story / Create Story Button */}
       <div className="flex flex-col items-center shrink-0">
         <button
