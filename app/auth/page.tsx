@@ -84,6 +84,10 @@ const AuthPage = () => {
                 setError('Username is required.');
                 return false;
             }
+            if (!formData.name) {
+                setError('Full Name is required.');
+                return false;
+            }
             if (formData.password !== formData.confirmPassword) {
                 setError('Passwords do not match.');
                 return false;
@@ -106,9 +110,17 @@ const AuthPage = () => {
 
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+            
+            // --- CHANGE 1: Corrected payload for registration to include 'name' ---
             const payload = isLogin
                 ? { email: formData.email, password: formData.password }
-                : { username: formData.username, email: formData.email, password: formData.password };
+                : { 
+                    name: formData.name, 
+                    username: formData.username, 
+                    email: formData.email, 
+                    password: formData.password 
+                  };
+            // ----------------------------------------------------------------------
 
             const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                 method: 'POST',
@@ -139,12 +151,12 @@ const AuthPage = () => {
                     });
                     console.log('[AUTH] Referral code used:', refCode);
                 }
-
-                if (isLogin) {
-                    router.push('/');
-                } else {
-                    router.push('/auth');
-                }
+                
+                // --- CHANGE 2: Changed redirection logic for better UX after registration ---
+                // Redirect to the home page (or dashboard) after successful login or registration
+                router.push('/'); 
+                // ------------------------------------------------------------------------------
+                
             } else {
                 setError('Authentication succeeded, but session data missing.');
             }
@@ -165,7 +177,6 @@ const AuthPage = () => {
         setSuccess(null);
         setFormData({name: '', username: '', email: '', password: '', confirmPassword: '' });
     };
-
 
     return (
         <div className=" bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8 ">
