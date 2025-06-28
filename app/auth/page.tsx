@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Icon } from '@iconify/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -33,7 +33,23 @@ interface AuthErrorResponse {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-const AuthPage = () => {
+// Component to handle referral code from URL params
+const ReferralHandler = ({ setRefCode }: { setRefCode: (ref: string) => void }) => {
+    const searchParams = useSearchParams();
+    
+    useEffect(() => {
+        const ref = searchParams.get('ref');
+        if (ref) {
+            setRefCode(ref);
+            console.log('[AUTH] Referral Code Detected:', ref);
+        }
+    }, [searchParams, setRefCode]);
+
+    return null;
+};
+
+// Main auth form component
+const AuthForm = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,15 +65,6 @@ const AuthPage = () => {
     });
 
     const router = useRouter();
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        const ref = searchParams.get('ref');
-        if (ref) {
-            setRefCode(ref);
-            console.log('[AUTH] Referral Code Detected:', ref);
-        }
-    }, [searchParams]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -110,17 +117,14 @@ const AuthPage = () => {
 
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-            
-            // --- CHANGE 1: Corrected payload for registration to include 'name' ---
             const payload = isLogin
                 ? { email: formData.email, password: formData.password }
-                : { 
-                    name: formData.name, 
-                    username: formData.username, 
-                    email: formData.email, 
-                    password: formData.password 
-                  };
-            // ----------------------------------------------------------------------
+                : {
+                    name: formData.name,
+                    username: formData.username,
+                    email: formData.email,
+                    password: formData.password
+                };
 
             const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                 method: 'POST',
@@ -151,17 +155,13 @@ const AuthPage = () => {
                     });
                     console.log('[AUTH] Referral code used:', refCode);
                 }
-                
-                // --- CHANGE 2: Changed redirection logic for better UX after registration ---
-                // Redirect to the home page (or dashboard) after successful login or registration
-                router.push('/'); 
-                // ------------------------------------------------------------------------------
-                
+
+                router.push('/');
             } else {
                 setError('Authentication succeeded, but session data missing.');
             }
 
-            setFormData({name: '', username: '', email: '', password: '', confirmPassword: '' });
+            setFormData({ name: '', username: '', email: '', password: '', confirmPassword: '' });
 
         } catch (err: any) {
             console.error('[AUTH PAGE] Error:', err);
@@ -175,11 +175,16 @@ const AuthPage = () => {
         setIsLogin(prev => !prev);
         setError(null);
         setSuccess(null);
-        setFormData({name: '', username: '', email: '', password: '', confirmPassword: '' });
+        setFormData({ name: '', username: '', email: '', password: '', confirmPassword: '' });
     };
 
     return (
-        <div className=" bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8 ">
+        <div className="bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8">
+            {/* Wrap the ReferralHandler in Suspense */}
+            <Suspense fallback={null}>
+                <ReferralHandler setRefCode={setRefCode} />
+            </Suspense>
+
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className='flex flex-col items-center gap-2 text-forest font-bold font-inter text-2xl mb-2'>
@@ -369,6 +374,34 @@ const AuthPage = () => {
                 </div>
             </div>
         </div>
+    );
+};
+
+// Main page component wrapped in Suspense
+const AuthPage = () => {
+    return (
+        <Suspense fallback={
+            <div className="bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8">
+                <div className="w-full max-w-md">
+                    <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                            <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                        </div>
+                        <div className="h-6 bg-gray-200 rounded mt-4 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded mt-2 animate-pulse"></div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="space-y-4">
+                            <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                            <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                            <div className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }>
+            <AuthForm />
+        </Suspense>
     );
 };
 
