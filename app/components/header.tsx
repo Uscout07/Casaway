@@ -17,7 +17,7 @@ export default function NavBar() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [imageError, setImageError] = useState(false); // 👈 New
+  const [imageError, setImageError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,15 +82,18 @@ export default function NavBar() {
         src={user.profilePic}
         alt="Profile"
         className="max-md:w-[40px] max-md:h-[40px] w-[32px] h-[32px] object-cover"
-        onError={() => setImageError(true)} // 👈 Important
+        onError={() => setImageError(true)}
       />
     );
   };
 
   return (
-    <header className="px-6 md:py-6 w-full fixed flex-1 flex items-center justify-between  font-inter bg-ambient md:h-[9vh] z-50">
+    <header className="px-6 md:py-6 w-full fixed flex-1 flex items-center justify-between font-inter bg-ambient md:h-[9vh] z-50">
       <div className="top-0 z-50 w-full mx-auto flex items-center justify-between px-20 max-md:hidden">
-        <Image width={32} height={32} src="/logo.png" alt="Logo" />
+        <div className="flex items-center space-x-2">
+          <Image width={32} height={32} src="/logo.png" alt="Logo" />
+          <span className="text-forest font-bold text-lg">Casaway</span>
+        </div>
 
         <nav className="flex space-x-16 items-center">
           <a href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</a>
@@ -133,8 +136,11 @@ export default function NavBar() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between w-full h-[8vh] md:hidden">
-        <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
+      {/* Mobile Navbar */}
+      <div className="flex items-center justify-between w-full h-[8vh] md:hidden px-4">
+        <div className="flex items-center space-x-2">
+          <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
+        </div>
 
         <div className="relative" ref={dropdownRef}>
           {loading ? (
@@ -142,7 +148,7 @@ export default function NavBar() {
           ) : (
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className=" rounded-full overflow-hidden focus:outline-none"
+              className="rounded-full overflow-hidden focus:outline-none"
             >
               {renderProfileImage()}
             </button>

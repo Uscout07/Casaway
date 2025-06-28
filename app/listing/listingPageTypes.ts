@@ -13,9 +13,11 @@ export interface Listing {
     details: string;
     type: 'Single Room' | 'Whole Apartment' | 'Whole House';
     amenities: string[];
+    features: string[];
     city: string;
     country: string;
     roommates: string[];
+    petTypes: string[];
     tags: string[];
     availability: string[];
     images: string[];

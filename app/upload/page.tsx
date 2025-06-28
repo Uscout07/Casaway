@@ -65,6 +65,7 @@ const UploadListingPage = () => {
         { id: 'monitors', name: 'Monitors', icon: 'mdi:monitor' },
         { id: 'air-conditioning', name: 'Air Conditioning', icon: 'mdi:air-conditioner' }, // Added air-conditioning
         { id: 'heater', name: 'Heater', icon: 'mdi:radiator' }, // Added heater
+        { id: 'wifi', name: 'Wi-Fi', icon: 'mdi:wifi' }, // Added Wi-Fi
     ];
 
     const features = [
@@ -102,7 +103,7 @@ const UploadListingPage = () => {
         });
     };
 
-     useEffect(() => {
+    useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const modeFromUrl = params.get('mode');
         if (modeFromUrl === 'story') {
@@ -271,13 +272,18 @@ const UploadListingPage = () => {
             : [];
 
         const amenities = [
-            ...selectedFacilities,
-            ...selectedFeatures,
-            ...(customFacilities ? [customFacilities] : []),
-            ...(customFeatures ? [customFeatures] : [])
-        ];
+  ...selectedFacilities,
+  ...(customFacilities ? [customFacilities] : [])
+];
 
-        const tags = [];
+const features = [
+  ...selectedFeatures,
+  ...(customFeatures ? [customFeatures] : [])
+];
+
+const tags = [];
+if (livingWith.includes('family')) tags.push('Family');
+if (livingWith.includes('roommates-women') || livingWith.includes('females-only')) tags.push('Women Only');
         if (listingType === 'Single Room') {
             if (livingWith.includes('family')) tags.push('Family');
             if (livingWith.includes('roommates-women')) tags.push('Women Only');
@@ -287,7 +293,6 @@ const UploadListingPage = () => {
                 if (customPets) tags.push(customPets);
             }
         }
-
         const imageUrls = selectedImages.map(img => img.url);
 
         const roommates = [];
@@ -304,6 +309,7 @@ const UploadListingPage = () => {
             details: formData.details,
             type: listingType,
             amenities,
+            features,
             city: formData.city,
             country: formData.country,
             tags,
@@ -311,7 +317,8 @@ const UploadListingPage = () => {
             images: imageUrls,
             thumbnail: imageUrls[thumbnailIndex] || imageUrls[0] || '',
             status,
-            roommates
+            roommates,
+            petTypes
         };
 
         try {
@@ -359,449 +366,449 @@ const UploadListingPage = () => {
         onPostCreated: () => void;
     }
 
-   return (
-    <div className="min-h-screen bg-ambient font-inter pt-[8vh] sm:pt-[10vh] px-3 sm:px-4 md:px-6 lg:px-8">
-        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl py-3 sm:py-4 md:py-6 lg:py-8 font-bold text-forest text-center">
-            {viewMode === 'listing' ? 'Upload Listing' : viewMode === 'post' ? 'Create Post' : 'Create Story'}
-        </h1>
+    return (
+        <div className="min-h-screen bg-ambient font-inter pt-[8vh] sm:pt-[10vh] px-3 sm:px-4 md:px-6 lg:px-8">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl py-3 sm:py-4 md:py-6 lg:py-8 font-bold text-forest text-center">
+                {viewMode === 'listing' ? 'Upload Listing' : viewMode === 'post' ? 'Create Post' : 'Create Story'}
+            </h1>
 
-        {/* Toggle Buttons */}
-        <div className="flex justify-center mb-4 sm:mb-6 md:mb-8">
-            <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1 w-full max-w-xl sm:max-w-3xl">
-                <button
-                    onClick={() => setViewMode('listing')}
-                    className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
+            {/* Toggle Buttons */}
+            <div className="flex justify-center mb-4 sm:mb-6 md:mb-8">
+                <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1 w-full max-w-xl sm:max-w-3xl">
+                    <button
+                        onClick={() => setViewMode('listing')}
+                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
                         ${viewMode === 'listing' ? 'text-white bg-forest' : 'text-white'}`}
-                >
-                    <span className="hidden sm:inline">Create a Listing</span>
-                    <span className="sm:hidden">Listing</span>
-                </button>
-                <button
-                    onClick={() => setViewMode('post')}
-                    className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
+                    >
+                        <span className="hidden sm:inline">Create a Listing</span>
+                        <span className="sm:hidden">Listing</span>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('post')}
+                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
                         ${viewMode === 'post' ? 'text-white bg-forest' : 'text-white'}`}
-                >
-                    <span className="hidden sm:inline">Create a Post</span>
-                    <span className="sm:hidden">Post</span>
-                </button>
-                <button
-                    onClick={() => setViewMode('story')}
-                    className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
+                    >
+                        <span className="hidden sm:inline">Create a Post</span>
+                        <span className="sm:hidden">Post</span>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('story')}
+                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
                         ${viewMode === 'story' ? 'text-white bg-forest' : 'text-white'}`}
-                >
-                    <span className="hidden sm:inline">Create a Story</span>
-                    <span className="sm:hidden">Story</span>
-                </button>
-                <div
-                    className={`absolute top-1 bottom-1 w-1/2 bg-forest-green rounded-full shadow-md transition-transform duration-300 ease-in-out
+                    >
+                        <span className="hidden sm:inline">Create a Story</span>
+                        <span className="sm:hidden">Story</span>
+                    </button>
+                    <div
+                        className={`absolute top-1 bottom-1 w-1/2 bg-forest-green rounded-full shadow-md transition-transform duration-300 ease-in-out
                         ${viewMode === 'listing' ? 'left-1' : 'left-1/2'}`}
-                    style={{
-                        transform: viewMode === 'listing' ? 'translateX(0)' : 'translateX(calc(100% - 8px))'
-                    }}
-                ></div>
+                        style={{
+                            transform: viewMode === 'listing' ? 'translateX(0)' : 'translateX(calc(100% - 8px))'
+                        }}
+                    ></div>
+                </div>
             </div>
-        </div>
 
-        {viewMode === 'listing' ? (
-            <div className="flex flex-col xl:flex-row xl:justify-center xl:gap-8 2xl:gap-12 max-w-7xl mx-auto">
-                {/* Left Column - Images and Calendar */}
-                <div className="w-full max-w-[400px] xl:w-2/5 2xl:w-1/3 flex flex-col space-y-4 sm:space-y-6 mb-6 xl:mb-0">
-                    {/* Image Upload Section */}
-                    <div className="bg-white w-full aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
-                        <Icon icon="material-symbols:upload-rounded" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-forest-medium mx-auto mb-3 sm:mb-4" />
-                        <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base">Upload Images of Your Property</p>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handleImageUpload}
-                            className="hidden"
-                            id="image-upload"
-                        />
-                        <label
-                            htmlFor="image-upload"
-                            className="absolute inset-0 z-20 opacity-0 cursor-pointer"
-                        >
-                            Choose Images
-                        </label>
-                    </div>
-
-                    {/* Selected Images Display */}
-                    {selectedImages.length > 0 && (
-                        <div>
-                            <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Selected Images ({selectedImages.length}/10):</p>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-3 gap-2 sm:gap-3">
-                                {selectedImages.map((image, index) => (
-                                    <div key={image.id} className="relative group">
-                                        <img
-                                            src={image.url}
-                                            alt={image.name}
-                                            className={`w-full h-14 sm:h-16 md:h-20 object-cover rounded-lg border-2 ${thumbnailIndex === index ? 'border-forest' : 'border-transparent'
-                                                } cursor-pointer`}
-                                            onClick={() => setThumbnailIndex(index)}
-                                        />
-                                        <button
-                                            onClick={() => removeImage(image.id)}
-                                            className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-coral text-white rounded-full p-1 hover:bg-red-600"
-                                        >
-                                            <Icon icon="mdi:close" className="w-2 h-2 sm:w-3 sm:h-3" />
-                                        </button>
-                                        {thumbnailIndex === index && (
-                                            <span className="absolute bottom-0 left-0 bg-teal-600 text-white text-xs px-1 sm:px-2 py-1 rounded-tr-lg">
-                                                Thumbnail
-                                            </span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Calendar with Range Selection */}
-                    <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm">
-                        <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Select Availability</h3>
-                        <div className="mb-3 sm:mb-4">
-                            <div className="flex items-center justify-between mb-3 sm:mb-4">
-                                <button onClick={() => navigateMonth('prev')} className="p-1 sm:p-2 rounded-lg hover:bg-gray-100">
-                                    <Icon icon="mdi:chevron-left" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                </button>
-                                <h4 className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h4>
-                                <button onClick={() => navigateMonth('next')} className="p-1 sm:p-2 rounded-lg hover:bg-gray-100">
-                                    <Icon icon="mdi:chevron-right" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-1 mb-2">
-                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                                    <div key={`${day}-${index}`} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-1">
-                                {renderCalendar()}
-                            </div>
+            {viewMode === 'listing' ? (
+                <div className="flex flex-col xl:flex-row xl:justify-center xl:gap-8 2xl:gap-12 max-w-7xl mx-auto">
+                    {/* Left Column - Images and Calendar */}
+                    <div className="w-full max-w-[400px] xl:w-2/5 2xl:w-1/3 flex flex-col space-y-4 sm:space-y-6 mb-6 xl:mb-0">
+                        {/* Image Upload Section */}
+                        <div className="bg-white w-full aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                            <Icon icon="material-symbols:upload-rounded" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-forest-medium mx-auto mb-3 sm:mb-4" />
+                            <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base">Upload Images of Your Property</p>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageUpload}
+                                className="hidden"
+                                id="image-upload"
+                            />
+                            <label
+                                htmlFor="image-upload"
+                                className="absolute inset-0 z-20 opacity-0 cursor-pointer"
+                            >
+                                Choose Images
+                            </label>
                         </div>
 
-                        {selectedRange.start && selectedRange.end && (
-                            <div className="text-xs sm:text-sm text-gray-600 mt-2">
-                                Selected from <strong>{selectedRange.start}</strong> to <strong>{selectedRange.end}</strong>
+                        {/* Selected Images Display */}
+                        {selectedImages.length > 0 && (
+                            <div>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">Selected Images ({selectedImages.length}/10):</p>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-3 gap-2 sm:gap-3">
+                                    {selectedImages.map((image, index) => (
+                                        <div key={image.id} className="relative group">
+                                            <img
+                                                src={image.url}
+                                                alt={image.name}
+                                                className={`w-full h-14 sm:h-16 md:h-20 object-cover rounded-lg border-2 ${thumbnailIndex === index ? 'border-forest' : 'border-transparent'
+                                                    } cursor-pointer`}
+                                                onClick={() => setThumbnailIndex(index)}
+                                            />
+                                            <button
+                                                onClick={() => removeImage(image.id)}
+                                                className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-coral text-white rounded-full p-1 hover:bg-red-600"
+                                            >
+                                                <Icon icon="mdi:close" className="w-2 h-2 sm:w-3 sm:h-3" />
+                                            </button>
+                                            {thumbnailIndex === index && (
+                                                <span className="absolute bottom-0 left-0 bg-teal-600 text-white text-xs px-1 sm:px-2 py-1 rounded-tr-lg">
+                                                    Thumbnail
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
-                    </div>
-                </div>
 
-                {/* Right Column - Form Fields */}
-                <div className="w-full xl:w-3/5 2xl:w-2/3 space-y-4 sm:space-y-6">
-                    {/* Space Type Selection */}
-                    <div className="rounded-lg p-3 sm:p-4 md:p-6">
-                        <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">What type of space do you want to list?</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            <button
-                                onClick={() => handleSpaceTypeSelect('Single Room')}
-                                className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Single Room'
-                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                    : 'border-forest'
-                                    }`}
-                            >
-                                <Icon icon="mdi:guest-room-outline" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
-                                <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Single Room</span>
-                            </button>
+                        {/* Calendar with Range Selection */}
+                        <div className="bg-white rounded-lg p-3 sm:p-4 md:p-6 shadow-sm">
+                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Select Availability</h3>
+                            <div className="mb-3 sm:mb-4">
+                                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                                    <button onClick={() => navigateMonth('prev')} className="p-1 sm:p-2 rounded-lg hover:bg-gray-100">
+                                        <Icon icon="mdi:chevron-left" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                    </button>
+                                    <h4 className="text-xs sm:text-sm md:text-base lg:text-lg font-medium">{monthNames[currentMonth]} {currentYear}</h4>
+                                    <button onClick={() => navigateMonth('next')} className="p-1 sm:p-2 rounded-lg hover:bg-gray-100">
+                                        <Icon icon="mdi:chevron-right" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                    </button>
+                                </div>
 
-                            <button
-                                onClick={() => handleSpaceTypeSelect('Whole Apartment')}
-                                className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole Apartment'
-                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                    : 'border-forest'
-                                    }`}
-                            >
-                                <Icon icon="ph:building-apartment" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
-                                <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Whole Apartment</span>
-                            </button>
+                                <div className="grid grid-cols-7 gap-1 mb-2">
+                                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                                        <div key={`${day}-${index}`} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">
+                                            {day}
+                                        </div>
+                                    ))}
+                                </div>
 
-                            <button
-                                onClick={() => handleSpaceTypeSelect('Whole House')}
-                                className={`sm:col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole House'
-                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                    : 'border-forest'
-                                    }`}
-                            >
-                                <Icon icon="solar:home-linear" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
-                                <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Whole House</span>
-                            </button>
+                                <div className="grid grid-cols-7 gap-1">
+                                    {renderCalendar()}
+                                </div>
+                            </div>
+
+                            {selectedRange.start && selectedRange.end && (
+                                <div className="text-xs sm:text-sm text-gray-600 mt-2">
+                                    Selected from <strong>{selectedRange.start}</strong> to <strong>{selectedRange.end}</strong>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Single Room Living Arrangements */}
-                    {listingType === 'Single Room' && (
+                    {/* Right Column - Form Fields */}
+                    <div className="w-full xl:w-3/5 2xl:w-2/3 space-y-4 sm:space-y-6">
+                        {/* Space Type Selection */}
                         <div className="rounded-lg p-3 sm:p-4 md:p-6">
-                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Who will your swap live with?</h3>
-                            <div className="space-y-2 sm:space-y-3">
+                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">What type of space do you want to list?</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
                                 <button
-                                    onClick={() => handleLivingWithToggle('family')}
-                                    className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('family')
+                                    onClick={() => handleSpaceTypeSelect('Single Room')}
+                                    className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Single Room'
                                         ? 'border-teal-600 bg-teal-50 text-teal-700'
                                         : 'border-forest'
                                         }`}
                                 >
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <Icon icon="mdi:account-group" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                        <span className="text-xs sm:text-sm md:text-base">Family</span>
-                                    </div>
-                                    {livingWith.includes('family') && (
-                                        <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
-                                    )}
+                                    <Icon icon="mdi:guest-room-outline" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
+                                    <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Single Room</span>
                                 </button>
 
                                 <button
-                                    onClick={() => handleLivingWithToggle('roommates')}
-                                    className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('roommates-women')
+                                    onClick={() => handleSpaceTypeSelect('Whole Apartment')}
+                                    className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole Apartment'
                                         ? 'border-teal-600 bg-teal-50 text-teal-700'
                                         : 'border-forest'
                                         }`}
                                 >
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <Icon icon="mdi:account-group" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                        <span className="text-xs sm:text-sm md:text-base">Roommates</span>
-                                    </div>
-                                    {livingWith.includes('roommates-women') && (
-                                        <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
-                                    )}
+                                    <Icon icon="ph:building-apartment" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
+                                    <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Whole Apartment</span>
                                 </button>
 
-                                {livingWith.includes('roommates') && (
-                                    <div className="ml-3 sm:ml-4 space-y-2">
-                                        <input
-                                            type="number"
-                                            placeholder="Number of roommates"
-                                            value={roommateDetails.count}
-                                            onChange={(e) =>
-                                                setRoommateDetails((prev) => ({ ...prev, count: e.target.value }))
-                                            }
-                                            className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Gender of roommates"
-                                            value={roommateDetails.gender}
-                                            onChange={(e) =>
-                                                setRoommateDetails((prev) => ({ ...prev, gender: e.target.value }))
-                                            }
-                                            className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
-                                        />
-                                        <button
-                                            onClick={() => handleLivingWithToggle('females-only')}
-                                            className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('females-only')
-                                                ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                : 'border-forest'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2 sm:gap-3">
-                                                <Icon icon="mdi:gender-female" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                                <span className="text-xs sm:text-sm md:text-base">Available for women only</span>
-                                            </div>
-                                            {livingWith.includes('females-only') && (
-                                                <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
-                                            )}
-                                        </button>
-                                    </div>
-                                )}
-
                                 <button
-                                    onClick={() => handleLivingWithToggle('pets')}
-                                    className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('pets')
+                                    onClick={() => handleSpaceTypeSelect('Whole House')}
+                                    className={`sm:col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole House'
                                         ? 'border-teal-600 bg-teal-50 text-teal-700'
                                         : 'border-forest'
                                         }`}
                                 >
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <Icon icon="mdi:paw" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-                                        <span className="text-xs sm:text-sm md:text-base">Pets</span>
-                                    </div>
-                                    {livingWith.includes('pets') && (
-                                        <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
-                                    )}
+                                    <Icon icon="solar:home-linear" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
+                                    <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold">Whole House</span>
                                 </button>
-
-                                {/* Pet Types Selection */}
-                                {livingWith.includes('pets') && (
-                                    <div className="ml-3 sm:ml-4 space-y-2">
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button
-                                                onClick={() => handlePetTypeToggle('dogs')}
-                                                className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('dogs')
-                                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                    : 'border-forest'
-                                                    }`}
-                                            >
-                                                <Icon icon="mdi:dog" className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                <span className="text-xs sm:text-sm">Dogs</span>
-                                            </button>
-
-                                            <button
-                                                onClick={() => handlePetTypeToggle('cats')}
-                                                className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('cats')
-                                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                    : 'border-forest'
-                                                    }`}
-                                            >
-                                                <Icon icon="mdi:cat" className="w-4 h-4 sm:w-5 sm:h-5" />
-                                                <span className="text-xs sm:text-sm">Cats</span>
-                                            </button>
-                                        </div>
-
-                                        <input
-                                            type="text"
-                                            placeholder="Other pets (specify)"
-                                            value={customPets}
-                                            onChange={(e) => setCustomPets(e.target.value)}
-                                            className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
-                                        />
-                                    </div>
-                                )}
                             </div>
                         </div>
-                    )}
 
-                    {/* Facilities Section */}
-                    <div className="rounded-lg p-3 sm:p-4 md:p-6">
-                        <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Facilities</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            {facilities.map((facility) => (
-                                <button
-                                    key={facility.id}
-                                    onClick={() => handleFacilityToggle(facility.id)}
-                                    className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFacilities.includes(facility.id)
-                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                        : 'border-forest'
-                                        }`}
-                                >
-                                    <Icon icon={facility.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
-                                    <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center">{facility.name}</span>
-                                </button>
-                            ))}
-                        </div>
+                        {/* Single Room Living Arrangements */}
+                        {listingType === 'Single Room' && (
+                            <div className="rounded-lg p-3 sm:p-4 md:p-6">
+                                <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Who will your swap live with?</h3>
+                                <div className="space-y-2 sm:space-y-3">
+                                    <button
+                                        onClick={() => handleLivingWithToggle('family')}
+                                        className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('family')
+                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                            : 'border-forest'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <Icon icon="mdi:account-group" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                            <span className="text-xs sm:text-sm md:text-base">Family</span>
+                                        </div>
+                                        {livingWith.includes('family') && (
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                        )}
+                                    </button>
 
-                        <input
-                            type="text"
-                            placeholder="Add other facilities"
-                            value={customFacilities}
-                            onChange={(e) => setCustomFacilities(e.target.value)}
-                            className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
-                        />
-                    </div>
+                                    <button
+                                        onClick={() => handleLivingWithToggle('roommates')}
+                                        className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('roommates-women')
+                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                            : 'border-forest'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <Icon icon="mdi:account-group" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                            <span className="text-xs sm:text-sm md:text-base">Roommates</span>
+                                        </div>
+                                        {livingWith.includes('roommates-women') && (
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                        )}
+                                    </button>
 
-                    {/* Features Section */}
-                    <div className="rounded-lg p-3 sm:p-4 md:p-6">
-                        <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Features</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
-                            {features.map((feature) => (
-                                <button
-                                    key={feature.id}
-                                    onClick={() => handleFeatureToggle(feature.id)}
-                                    className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFeatures.includes(feature.id)
-                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                        : 'border-forest'
-                                        }`}
-                                >
-                                    <Icon icon={feature.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
-                                    <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center">{feature.name}</span>
-                                </button>
-                            ))}
-                        </div>
+                                    {livingWith.includes('roommates') && (
+                                        <div className="ml-3 sm:ml-4 space-y-2">
+                                            <input
+                                                type="number"
+                                                placeholder="Number of roommates"
+                                                value={roommateDetails.count}
+                                                onChange={(e) =>
+                                                    setRoommateDetails((prev) => ({ ...prev, count: e.target.value }))
+                                                }
+                                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Gender of roommates"
+                                                value={roommateDetails.gender}
+                                                onChange={(e) =>
+                                                    setRoommateDetails((prev) => ({ ...prev, gender: e.target.value }))
+                                                }
+                                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                                            />
+                                            <button
+                                                onClick={() => handleLivingWithToggle('females-only')}
+                                                className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('females-only')
+                                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                                    : 'border-forest'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                    <Icon icon="mdi:gender-female" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                                    <span className="text-xs sm:text-sm md:text-base">Available for women only</span>
+                                                </div>
+                                                {livingWith.includes('females-only') && (
+                                                    <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
 
-                        <input
-                            type="text"
-                            placeholder="Add other features"
-                            value={customFeatures}
-                            onChange={(e) => setCustomFeatures(e.target.value)}
-                            className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
-                        />
-                    </div>
+                                    <button
+                                        onClick={() => handleLivingWithToggle('pets')}
+                                        className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('pets')
+                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                            : 'border-forest'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            <Icon icon="mdi:paw" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                                            <span className="text-xs sm:text-sm md:text-base">Pets</span>
+                                        </div>
+                                        {livingWith.includes('pets') && (
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                        )}
+                                    </button>
 
-                    {/* Basic Information */}
-                    <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
-                        <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Country</label>
+                                    {/* Pet Types Selection */}
+                                    {livingWith.includes('pets') && (
+                                        <div className="ml-3 sm:ml-4 space-y-2">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => handlePetTypeToggle('dogs')}
+                                                    className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('dogs')
+                                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                                        : 'border-forest'
+                                                        }`}
+                                                >
+                                                    <Icon icon="mdi:dog" className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                    <span className="text-xs sm:text-sm">Dogs</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handlePetTypeToggle('cats')}
+                                                    className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('cats')
+                                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                                        : 'border-forest'
+                                                        }`}
+                                                >
+                                                    <Icon icon="mdi:cat" className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                    <span className="text-xs sm:text-sm">Cats</span>
+                                                </button>
+                                            </div>
+
+                                            <input
+                                                type="text"
+                                                placeholder="Other pets (specify)"
+                                                value={customPets}
+                                                onChange={(e) => setCustomPets(e.target.value)}
+                                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Facilities Section */}
+                        <div className="rounded-lg p-3 sm:p-4 md:p-6">
+                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Facilities</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                {facilities.map((facility) => (
+                                    <button
+                                        key={facility.id}
+                                        onClick={() => handleFacilityToggle(facility.id)}
+                                        className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFacilities.includes(facility.id)
+                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                            : 'border-forest'
+                                            }`}
+                                    >
+                                        <Icon icon={facility.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
+                                        <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center">{facility.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+
                             <input
                                 type="text"
-                                value={formData.country}
-                                onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                                className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                placeholder="Add other facilities"
+                                value={customFacilities}
+                                onChange={(e) => setCustomFacilities(e.target.value)}
+                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">City</label>
+                        {/* Features Section */}
+                        <div className="rounded-lg p-3 sm:p-4 md:p-6">
+                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Features</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                {features.map((feature) => (
+                                    <button
+                                        key={feature.id}
+                                        onClick={() => handleFeatureToggle(feature.id)}
+                                        className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFeatures.includes(feature.id)
+                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
+                                            : 'border-forest'
+                                            }`}
+                                    >
+                                        <Icon icon={feature.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
+                                        <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-center">{feature.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+
                             <input
                                 type="text"
-                                value={formData.city}
-                                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                                className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                placeholder="Add other features"
+                                value={customFeatures}
+                                onChange={(e) => setCustomFeatures(e.target.value)}
+                                className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Listing Title</label>
-                            <input
-                                type="text"
-                                value={formData.title}
-                                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
-                            />
+                        {/* Basic Information */}
+                        <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Country</label>
+                                <input
+                                    type="text"
+                                    value={formData.country}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">City</label>
+                                <input
+                                    type="text"
+                                    value={formData.city}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Listing Title</label>
+                                <input
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Listing Details</label>
+                                <textarea
+                                    rows={3}
+                                    value={formData.details}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest resize-none text-xs sm:text-sm"
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-xs sm:text-sm font-medium text-gray-800 mb-2">Listing Details</label>
-                            <textarea
-                                rows={3}
-                                value={formData.details}
-                                onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
-                                className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest resize-none text-xs sm:text-sm"
-                            />
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
+                            <button
+                                onClick={() => handleSubmitListing('draft')}
+                                disabled={isLoading}
+                                className="w-full sm:flex-1 bg-gray-500 text-white py-2 sm:py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                            >
+                                {isLoading ? 'Saving...' : 'Save As Draft'}
+                            </button>
+
+                            <button
+                                onClick={() => handleSubmitListing('published')}
+                                disabled={isLoading || !formData.title || !formData.city || !listingType}
+                                className="w-full sm:flex-1 bg-teal-600 text-white py-2 sm:py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
+                            >
+                                {isLoading ? 'Publishing...' : 'Post Listing'}
+                            </button>
                         </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
-                        <button
-                            onClick={() => handleSubmitListing('draft')}
-                            disabled={isLoading}
-                            className="w-full sm:flex-1 bg-gray-500 text-white py-2 sm:py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                        >
-                            {isLoading ? 'Saving...' : 'Save As Draft'}
-                        </button>
-
-                        <button
-                            onClick={() => handleSubmitListing('published')}
-                            disabled={isLoading || !formData.title || !formData.city || !listingType}
-                            className="w-full sm:flex-1 bg-teal-600 text-white py-2 sm:py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 text-sm sm:text-base"
-                        >
-                            {isLoading ? 'Publishing...' : 'Post Listing'}
-                        </button>
                     </div>
                 </div>
-            </div>
-        ) : viewMode === 'post' ?
-            // Render CreatePostForm when viewMode is 'post'
-            <div className="flex justify-center mt-4 sm:mt-6 md:mt-8">
-                <div className="w-full max-w-4xl px-2 sm:px-0">
-                    <CreatePostForm
-                        initialImageUrl={selectedImages[0]?.url || ''}
-                        initialCountry={formData.country}
-                        initialCity={formData.city}
-                        onPostCreated={handlePostCreated}
-                    />
+            ) : viewMode === 'post' ?
+                // Render CreatePostForm when viewMode is 'post'
+                <div className="flex justify-center mt-4 sm:mt-6 md:mt-8">
+                    <div className="w-full max-w-4xl px-2 sm:px-0">
+                        <CreatePostForm
+                            initialImageUrl={selectedImages[0]?.url || ''}
+                            initialCountry={formData.country}
+                            initialCity={formData.city}
+                            onPostCreated={handlePostCreated}
+                        />
+                    </div>
                 </div>
-            </div>
-        : (
-            <>
-                <StoryUpload />
-            </>
-        )}
-    </div>
-);
+                : (
+                    <>
+                        <StoryUpload />
+                    </>
+                )}
+        </div>
+    );
 };
 
 export default UploadListingPage;

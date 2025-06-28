@@ -2,11 +2,10 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
-import StoryUpload from './components/storyUpload';
 import StoryFeed from './components/Story/storyFeed';
 import SearchBar from './components/searchBar';
 import FilterModal from './components/filterModal';
-import { useParams, useRouter } from 'next/navigation';
+import {  useRouter } from 'next/navigation';
 import 'react-datepicker/dist/react-datepicker.css';
 import ListingCard, { ListingCardSkeleton } from './components/listingCard'; // Import ListingCardSkeleton
 import { Listing } from './types'; // <--- Crucial: Ensure this is correctly importing the shared Listing type

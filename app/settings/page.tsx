@@ -211,7 +211,7 @@ const fetchUserData = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/me`, { // Assuming this endpoint for deleting user account
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/delete`, { // Assuming this endpoint for deleting user account
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -220,7 +220,7 @@ const fetchUserData = async () => {
         alert('Account deleted successfully!');
         localStorage.removeItem('token'); // Clear token
         sessionStorage.removeItem('token'); // Clear session token
-        window.location.href = '/login'; // Redirect to login page
+        window.location.href = '/auth'; // Redirect to login page
       } else {
         const errorData = await response.json();
         alert(errorData.msg || 'Failed to delete account.');

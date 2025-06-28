@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 interface AuthFormData {
+    name: string;
     username: string;
     email: string;
     password: string;
@@ -16,8 +18,10 @@ interface AuthResponse {
     token?: string;
     user: {
         _id: string;
+        name: string;
         username: string;
         email: string;
+        referralCode?: string;
         profilePic?: string;
     };
 }
@@ -34,8 +38,10 @@ const AuthPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [refCode, setRefCode] = useState<string | null>(null);
 
     const [formData, setFormData] = useState<AuthFormData>({
+        name: '',
         username: '',
         email: '',
         password: '',
@@ -43,6 +49,15 @@ const AuthPage = () => {
     });
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const ref = searchParams.get('ref');
+        if (ref) {
+            setRefCode(ref);
+            console.log('[AUTH] Referral Code Detected:', ref);
+        }
+    }, [searchParams]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -116,22 +131,25 @@ const AuthPage = () => {
                 localStorage.setItem('token', successData.token);
                 localStorage.setItem('user', JSON.stringify(successData.user));
 
-                // 🔁 Correct redirection logic
+                if (!isLogin && refCode) {
+                    await fetch(`${API_BASE_URL}/api/referral/use`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refCode, userId: successData.user._id }),
+                    });
+                    console.log('[AUTH] Referral code used:', refCode);
+                }
+
                 if (isLogin) {
                     router.push('/');
                 } else {
-                    router.push('/register'); // ✅ you mentioned you want this
+                    router.push('/auth');
                 }
             } else {
                 setError('Authentication succeeded, but session data missing.');
             }
 
-            setFormData({
-                username: '',
-                email: '',
-                password: '',
-                confirmPassword: ''
-            });
+            setFormData({name: '', username: '', email: '', password: '', confirmPassword: '' });
 
         } catch (err: any) {
             console.error('[AUTH PAGE] Error:', err);
@@ -145,22 +163,21 @@ const AuthPage = () => {
         setIsLogin(prev => !prev);
         setError(null);
         setSuccess(null);
-        setFormData({
-            username: '',
-            email: '',
-            password: '',
-            confirmPassword: ''
-        });
+        setFormData({name: '', username: '', email: '', password: '', confirmPassword: '' });
     };
 
+
     return (
-        <div className="h-[100vh] bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[20vh] pb-8 ">
+        <div className=" bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8 ">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-forest rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Icon icon="material-symbols:home-outline" className="w-8 h-8 text-white" />
+                    <div className='flex flex-col items-center gap-2 text-forest font-bold font-inter text-2xl mb-2'>
+                        <div className="w-16 h-16 bg-forest rounded-full flex items-center justify-center mx-auto">
+                            <Image src="/ambientLogo.svg" alt="Ambient Logo" width={0} height={0} className="w-12 h-12 object-cover rounded-full" />
+                        </div>
+                        Casaway
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-xl font-semibold text-gray-900">
                         {isLogin ? 'Welcome Back' : 'Create Account'}
                     </h1>
                     <p className="text-gray-600">
@@ -173,25 +190,46 @@ const AuthPage = () => {
                 <div className="bg-white rounded-xl shadow-sm p-6">
                     <div className="space-y-4">
                         {!isLogin && (
-                            <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Username
-                                </label>
-                                <div className="relative">
-                                    <Icon icon="material-symbols:person-outline" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <input
-                                        id="username"
-                                        name="username"
-                                        type="text"
-                                        value={formData.username}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-medium focus:border-transparent"
-                                        placeholder="Enter your username"
-                                        disabled={loading}
-                                        required
-                                    />
+                            <>
+                                <div>
+                                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <Icon icon="material-symbols:person-outline" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            id="name"
+                                            name="name"
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-medium focus:border-transparent"
+                                            placeholder="Enter your full name"
+                                            disabled={loading}
+                                            required
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                                <div>
+                                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Username
+                                    </label>
+                                    <div className="relative">
+                                        <Icon icon="material-symbols:person-outline" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <input
+                                            id="username"
+                                            name="username"
+                                            type="text"
+                                            value={formData.username}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-forest-medium focus:border-transparent"
+                                            placeholder="Enter your username"
+                                            disabled={loading}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </>
                         )}
 
                         <div>

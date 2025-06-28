@@ -23,6 +23,7 @@ export interface Listing {
     details: string;
     type: 'Single Room' | 'Whole Apartment' | 'Whole House';
     amenities: string[];
+    features: string[];
     city: string;
     country: string;
     roommates: string[]; // <--- **CHANGE THIS TO string[]**
