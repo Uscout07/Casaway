@@ -164,12 +164,18 @@ export default function NavBar() {
               >
                 View Profile
               </button>
+              <button>
+                <a href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
+                Refer a Friend
+                </a>
+              </button>
               <button
                 onClick={handleLogout}
                 className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
               >
                 Logout
               </button>
+              
             </div>
           )}
         </div>
