@@ -116,7 +116,7 @@ export default function NavBar() {
           )}
 
           {dropdownOpen && !loading && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-[70]">
               <button
                 onClick={() => {
                   if (user?._id) router.push(`/profile/${user._id}`);
@@ -124,6 +124,11 @@ export default function NavBar() {
                 className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
               >
                 View Profile
+              </button>
+              <button>
+                <a href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
+                Refer a Friend
+                </a>
               </button>
               <button
                 onClick={handleLogout}
