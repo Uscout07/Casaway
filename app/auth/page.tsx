@@ -179,7 +179,7 @@ const AuthForm = () => {
     };
 
     return (
-        <div className="bg-ambient flex items-center justify-center px-6 pt-10 md:pt-[12vh] pb-8">
+        <div className="bg-ambient flex items-center justify-center px-6 pt-[12vh] pb-8">
             {/* Wrap the ReferralHandler in Suspense */}
             <Suspense fallback={null}>
                 <ReferralHandler setRefCode={setRefCode} />

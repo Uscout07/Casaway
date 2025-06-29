@@ -59,14 +59,21 @@ export default function NavBar() {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const handleClickOutside = (event: MouseEvent) => {
+    // Check if the click is outside the dropdown's container
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      // Use the functional update to avoid stale state issues with setDropdownOpen
+      setDropdownOpen(false);
+    }
+  };
+
+  // Use the 'click' event instead of 'mousedown'
+  // This helps prevent race conditions
+  document.addEventListener("click", handleClickOutside);
+
+  // Clean up the event listener on unmount
+  return () => document.removeEventListener("click", handleClickOutside);
+}, [dropdownOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -116,7 +123,7 @@ export default function NavBar() {
           )}
 
           {dropdownOpen && !loading && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-[70]">
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50"> {/* <-- CHANGE 'z-auto' to 'z-50' */}
               <button
                 onClick={() => {
                   if (user?._id) router.push(`/profile/${user._id}`);
@@ -125,9 +132,9 @@ export default function NavBar() {
               >
                 View Profile
               </button>
-              <button>
-                <a href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
-                Refer a Friend
+              <button className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
+                <a href="/referral" >
+                  Refer a Friend
                 </a>
               </button>
               <button
@@ -142,7 +149,7 @@ export default function NavBar() {
       </div>
 
       {/* Mobile Navbar */}
-      <div className="flex items-center justify-between w-full h-[8vh] md:hidden px-4">
+      <div className="flex items-center justify-between w-full max-[376px]:h-[10vh] h-[8vh] md:hidden px-4">
         <div className="flex items-center space-x-2">
           <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
         </div>
@@ -161,17 +168,18 @@ export default function NavBar() {
 
           {dropdownOpen && !loading && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-              <button
-                onClick={() => {
-                  if (user?._id) router.push(`/profile/${user._id}`);
-                }}
-                className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
-              >
-                View Profile
-              </button>
+              {user?._id ?
+                (<button
+                  onClick={() => {
+                    if (user?._id) router.push(`/profile/${user._id}`);
+                  }}
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
+                >
+                  View your Profile
+                </button>) : null}
               <button>
                 <a href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
-                Refer a Friend
+                  Refer a Friend
                 </a>
               </button>
               <button
@@ -180,7 +188,7 @@ export default function NavBar() {
               >
                 Logout
               </button>
-              
+
             </div>
           )}
         </div>
