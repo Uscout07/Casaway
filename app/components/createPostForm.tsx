@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 
+// Define a type for images that includes a URL
+interface ImageWithUrl extends File {
+  url?: string; // Add optional url property for simulated/actual uploaded URL
+}
+
 type CreatePostFormProps = {
   onPostCreated: () => void;
-  initialImageUrl?: string;
   initialCountry?: string;
   initialCity?: string;
 };
 
-const CreatePostForm: React.FC<CreatePostFormProps> = ({ 
-  onPostCreated, 
-  initialImageUrl = '', 
-  initialCountry = 'India', 
-  initialCity = 'Asoda Todran' 
+const CreatePostForm: React.FC<CreatePostFormProps> = ({
+  onPostCreated,
+  initialCountry = 'India',
+  initialCity = 'Asoda Todran',
 }) => {
   const [caption, setCaption] = useState('');
   const [tagsInput, setTagsInput] = useState('');
@@ -21,21 +24,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [cityInput, setCityInput] = useState(initialCity);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImages, setSelectedImages] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (initialImageUrl) {
-      const initialImage = {
-        id: Date.now(),
-        url: initialImageUrl,
-        name: 'initial-image'
-      };
-      setSelectedImages([initialImage]);
-    }
-  }, [initialImageUrl]);
-
-  useEffect(() => setCountryInput(initialCountry), [initialCountry]);
-  useEffect(() => setCityInput(initialCity), [initialCity]);
+  const [selectedImages, setSelectedImages] = useState<ImageWithUrl[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
@@ -45,88 +35,95 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
       return;
     }
 
+    const newPreviewUrls: string[] = [];
+    const newSelectedImages: ImageWithUrl[] = [];
+
     files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newImage = {
-          id: Date.now() + Math.random(),
-          file: file,
-          url: e.target?.result as string,
-          name: file.name
-        };
-        setSelectedImages(prev => [...prev, newImage]);
-      };
-      reader.readAsDataURL(file);
+      newPreviewUrls.push(URL.createObjectURL(file));
+
+      // --- IMPORTANT: This is where you would upload the file to a cloud service ---
+      // For now, we'll just add a placeholder URL to the file object for demonstration.
+      // In a real application, you would:
+      // 1. Call your image upload API (e.g., fetch('/api/upload-image', { method: 'POST', body: formData }))
+      // 2. Await the response to get the actual cloud URL.
+      // 3. Assign the URL: (file as ImageWithUrl).url = actualCloudUrl;
+      const simulatedUrl = `http://example.com/uploaded/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
+      newSelectedImages.push({ ...file, url: simulatedUrl }); // Attach a dummy URL
     });
+
+    setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    setSelectedImages(prev => [...prev, ...newSelectedImages]);
   };
 
-  const removeImage = (imageId: number) => {
-    setSelectedImages(prev => prev.filter(img => img.id !== imageId));
+  const handleRemoveImage = (index: number) => {
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmitPost = async (status: 'draft' | 'published') => {
     setIsLoading(true);
     setError(null);
 
-    const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-    const imageUrls = selectedImages.map(img => img.url);
+    // Validate inputs
+    if (!caption.trim() || !countryInput.trim() || !cityInput.trim()) {
+      setError('Please fill in all required fields (Caption, City, Country).');
+      setIsLoading(false);
+      return;
+    }
+    if (!selectedImages.length) {
+      setError('Please upload at least one image.');
+      setIsLoading(false);
+      return;
+    }
 
+    const token = localStorage.getItem('token'); // Retrieve token from local storage (or cookie)
+    if (!token) {
+        setError('User not logged in. Please log in to create a post.');
+        setIsLoading(false);
+        return;
+    }
+
+    const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean);
+
+    // Prepare data to send as JSON, including image URLs
     const postData = {
-      caption,
-      tags: tagsArray,
+      caption: caption,
       city: cityInput,
       country: countryInput,
-      imageUrl: imageUrls[0] || '',
-      images: imageUrls,
-      status
+      status: status,
+      tags: tagsArray,
+      imageUrl: selectedImages[0]?.url || '', // Main image URL
+      images: selectedImages.map(image => image.url).filter(Boolean), // Array of all image URLs
     };
 
-    if (!imageUrls[0]) {
-      setError('At least one image is required for the post.');
-      setIsLoading(false);
-      return;
-    }
-    if (!caption.trim()) {
-      setError('Caption is required for the post.');
-      setIsLoading(false);
-      return;
-    }
-    if (!countryInput.trim()) {
-      setError('Country is required.');
-      setIsLoading(false);
-      return;
-    }
-    if (!cityInput.trim()) {
-      setError('City is required.');
-      setIsLoading(false);
-      return;
-    }
+    console.log('Sending post data (JSON):', postData); // Log the data being sent
 
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json', // Explicitly set Content-Type for JSON
+          'Authorization': `Bearer ${token}`, // <-- ADDED: Send the JWT token
         },
-        body: JSON.stringify(postData),
+        body: JSON.stringify(postData), // Send JSON string
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        alert(`Post ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
-        setCaption('');
-        setTagsInput('');
-        setSelectedImages([]);
-        onPostCreated();
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.msg || 'Failed to create post');
+        throw new Error(errorData.msg || response.statusText || 'Failed to create post');
       }
+
+      const data = await response.json();
+      console.log('Post created successfully:', data);
+      onPostCreated(); // Callback to parent to close form or update list
+      setCaption('');
+      setTagsInput('');
+      setSelectedImages([]);
+      setPreviewUrls([]);
+      setError(null);
     } catch (err: any) {
-      console.error('Error creating post:', err);
-      setError(err.message || 'Error creating post. Please try again.');
+      console.error('Error creating post:', err.message);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -155,19 +152,19 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
           </label>
         </div>
 
-        {selectedImages.length > 0 && (
-          <div>
-            <p className="text-sm text-gray-600 mb-3">Selected Images ({selectedImages.length}/10):</p>
+        {previewUrls.length > 0 && (
+          <div className="mt-6"> {/* Added margin-top here */}
+            <p className="text-sm text-gray-600 mb-3">Selected Images ({previewUrls.length}/10):</p>
             <div className="grid grid-cols-3 gap-3">
-              {selectedImages.map((image) => (
-                <div key={image.id} className="relative">
+              {previewUrls.map((url, index) => (
+                <div key={index} className="relative">
                   <img
-                    src={image.url}
-                    alt={image.name}
+                    src={url}
+                    alt={`preview-${index}`}
                     className="w-full h-20 object-cover rounded-lg"
                   />
                   <button
-                    onClick={() => removeImage(image.id)}
+                    onClick={() => handleRemoveImage(index)} // Changed to handleRemoveImage
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                   >
                     <Icon icon="mdi:close" className="w-3 h-3" />
@@ -177,14 +174,14 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
             </div>
           </div>
         )}
+        {error && error.includes('image') && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
       {/* Right side - Form */}
       <div className="w-full max-w-[800px] space-y-6">
         <div className="bg-ambient rounded-lg px-4 pb-6 sm:px-6 space-y-4 w-full">
-
           {/* Country Input */}
-          <div className='w-full'>
+          <div className="w-full">
             <label htmlFor="post-country" className="block text-sm font-medium text-gray-800 mb-2">
               Country <span className="text-red-500">*</span>
             </label>
