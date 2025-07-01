@@ -8,10 +8,12 @@ interface ImageWithUrl extends File {
 }
 
 type CreatePostFormProps = {
-  onPostCreated: () => void;
-  initialCountry?: string;
-  initialCity?: string;
+    onPostCreated: () => void;
+    initialImageUrl?: string; // Made optional as it might not always be there
+    initialCountry?: string;
+    initialCity?: string;
 };
+
 
 const CreatePostForm: React.FC<CreatePostFormProps> = ({
   onPostCreated,
