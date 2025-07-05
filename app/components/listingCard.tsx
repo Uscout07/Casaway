@@ -142,24 +142,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         <Icon icon="material-symbols:location-on-outline" className="w-4 h-4 mr-1" />
                         <span>{listing.city}, {listing.country}</span>
                     </div>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex space-x-2 text-gray-500 text-sm">
-                            <span className="flex items-center">
-                                <Icon icon="material-symbols:calendar-today-outline" className="w-4 h-4 mr-1" />
-                                {formatAvailability(listing.availability)}
-                            </span>
-
-                        </div>
-                        <div className="flex space-x-2">
-                            <button aria-label="Favorite listing" onClick={handleLikeToggle} className="p-1 rounded-full hover:bg-gray-100">
-                                <Icon
-                                    icon={isLiked ? "material-symbols:favorite" : "material-symbols:favorite-outline"}
-                                    className={`w-5 h-5 transition-colors ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-                                />
-                            </button>
-                            {likesCount > 0 && <span className="text-sm text-gray-600">{likesCount}</span>}
-                        </div>
-                    </div>
                     <div className="flex flex-wrap gap-2 justify-end items-end mt-auto">
                         {listing.type && (
                             <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
