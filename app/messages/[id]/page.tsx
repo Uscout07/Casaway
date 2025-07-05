@@ -303,8 +303,8 @@ const ChatPage = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input Area - Responsive */}
-            <div className="absolute bottom-2 sm:bottom-3 left-2 right-2 sm:left-4 sm:right-4 bg-white rounded-2xl shadow-lg border border-gray-200 flex items-center p-2 sm:p-3 flex-shrink-0">
+            <div className='w-full bg-gradient-to-b from-ambient/50 to-ambient backdrop-blur-sm absolute bottom-0 py-3'>
+            <div className=" bg-white rounded-full shadow-lg border border-gray-200 flex items-center left-2 right-2 sm:left-4 sm:right-4 p-2 sm:p-3 flex-shrink-0 mx-4">
                 <input
                     type="text"
                     placeholder="Write a Message"
@@ -327,6 +327,7 @@ const ChatPage = () => {
                 >
                     <Icon icon="mingcute:send-fill" className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" />
                 </button>
+            </div>
             </div>
         </div>
     );

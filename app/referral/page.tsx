@@ -1,4 +1,3 @@
-// app/referral/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -11,6 +10,18 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+interface Reward {
+  brandKey: string;
+  displayName: string;
+  imageUrls?: string[];
+  cost: number;
+}
+
+const brandNameMap: Record<string, string> = {
+  B916708: 'Amazon.com',
+  B795341: 'Uber',
+};
+
 export default function ReferralPage() {
   const [userId, setUserId] = useState<string>('');
   const [referralCode, setReferralCode] = useState('');
@@ -19,21 +30,22 @@ export default function ReferralPage() {
   const [referralCount, setReferralCount] = useState(0);
   const [copySuccess, setCopySuccess] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [rewardsLoading, setRewardsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) return;
     const parsedUser = JSON.parse(storedUser);
-    console.log('[Referral Page] Loaded user ID:', parsedUser._id);
     setUserId(parsedUser._id);
   }, []);
 
   useEffect(() => {
     if (!userId) return;
+
     fetch(`${API_BASE_URL}/api/referral/${userId}`)
       .then(res => res.json())
       .then(data => {
-        console.log('[Referral Page] API Response:', data);
         setReferralCode(data.referralCode);
         setReferralLink(data.referralLink);
         setPoints(data.points);
@@ -42,26 +54,33 @@ export default function ReferralPage() {
       .catch(err => console.error('Error fetching referral data:', err));
   }, [userId]);
 
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/rewards/catalog`)
+      .then(res => res.json())
+      .then((data: { brands: Reward[] }) => {
+        setRewards(data.brands);
+        setRewardsLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching catalog:', err);
+        setRewardsLoading(false);
+      });
+  }, []);
+
   const handleCopy = () => {
     if (!referralLink) return;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(referralLink).then(() => {
+    navigator.clipboard.writeText(referralLink)
+      .then(() => {
         setCopySuccess('Copied!');
         setTimeout(() => setCopySuccess(''), 2000);
-      }).catch(() => setCopySuccess('Copy failed.'));
-    } else {
-      const input = document.createElement('input');
-      input.value = referralLink;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      setCopySuccess('Copied (fallback)');
-      setTimeout(() => setCopySuccess(''), 2000);
-    }
+      })
+      .catch(() => {
+        setCopySuccess('Copy failed.');
+        setTimeout(() => setCopySuccess(''), 2000);
+      });
   };
 
-  const handleRedeem = async (rewardName: string, cost: number) => {
+  const handleRedeem = async (brandKey: string, cost: number) => {
     if (!userId) return alert('Please log in first.');
 
     if (points < cost) {
@@ -72,14 +91,14 @@ export default function ReferralPage() {
       const res = await fetch(`${API_BASE_URL}/api/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, rewardName, cost }),
+        body: JSON.stringify({ userId, brandKey, value: cost }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Redemption failed');
 
       setMessage('Redemption successful!');
-      setPoints((prev) => prev - cost);
+      setPoints(prev => prev - cost);
       setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
       setMessage(err.message || 'Something went wrong');
@@ -87,17 +106,17 @@ export default function ReferralPage() {
   };
 
   return (
-    <div className="min-h-screen bg-ambient pt-[12vh] px-6">
-      <h1 className="text-2xl font-bold text-forest mb-6">Referral Program</h1>
+    <div className="min-h-screen bg-ambient pt-[12vh] px-6 flex flex-col gap-8 text-slate">
+      <h1 className="text-2xl font-bold text-forest">Referral Program</h1>
 
       {message && (
-        <div className="mb-4 p-3 rounded-lg bg-yellow-100 text-yellow-800 font-medium">
+        <div className="p-3 rounded-lg bg-yellow-100 text-yellow-800 font-medium">
           {message}
         </div>
       )}
 
-      <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-2">Your Referral Link</h2>
+      <div className="bg-white rounded-lg p-6 flex flex-col gap-4">
+        <h2 className="text-xl font-semibold text-forest">Your Referral Link</h2>
         <div className="flex items-center gap-3">
           <input
             value={referralLink}
@@ -111,52 +130,68 @@ export default function ReferralPage() {
             {copySuccess || 'Copy'}
           </button>
         </div>
-
         {referralLink && (
-          <div className="flex gap-4 mt-4">
+          <div className="flex gap-2">
             <FacebookShareButton url={referralLink}>
               <Icon icon="logos:facebook" className="w-6 h-6" />
             </FacebookShareButton>
             <WhatsappShareButton url={referralLink}>
-              <Icon icon="logos:whatsapp" className="w-6 h-6" />
+              <Icon icon="logos:whatsapp-icon" className="w-8 h-8" />
             </WhatsappShareButton>
             <TwitterShareButton url={referralLink}>
-              <Icon icon="logos:twitter" className="w-6 h-6" />
+              <Icon icon="devicon:twitter" className="w-5 h-5" />
             </TwitterShareButton>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-2">Your Stats</h2>
+      <div className="flex flex-col gap-6">
+        <div className="rounded-lg p-6 bg-white">
+          <h2 className="text-xl font-semibold mb-2 text-forest">Your Stats</h2>
           <p><strong>Referrals:</strong> {referralCount}</p>
           <p><strong>Points:</strong> {points}</p>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-2">Rewards Catalog</h2>
-          <div className="space-y-2">
-            <div className="border p-3 rounded-lg flex justify-between items-center">
-              <span>₹100 Amazon Gift Card</span>
-              <button
-                onClick={() => handleRedeem('₹100 Amazon Gift Card', 100)}
-                disabled={points < 100}
-                className={`text-white px-3 py-1 rounded-lg text-sm ${points < 100 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
-              >
-                Redeem
-              </button>
-            </div>
-            <div className="border p-3 rounded-lg flex justify-between items-center">
-              <span>₹200 Flipkart Voucher</span>
-              <button
-                onClick={() => handleRedeem('₹200 Flipkart Voucher', 200)}
-                disabled={points < 200}
-                className={`text-white px-3 py-1 rounded-lg text-sm ${points < 200 ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
-              >
-                Redeem
-              </button>
-            </div>
+        <div className="rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4 text-forest text-center">Rewards Catalog</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {rewardsLoading ? (
+              <p className="text-gray-500 animate-pulse">Loading rewards...</p>
+            ) : rewards.length === 0 ? (
+              <p className="text-red-500">No rewards available.</p>
+            ) : (
+              rewards.map((reward, idx) => {
+                const lastImage = reward.imageUrls?.[reward.imageUrls.length - 1];
+                const name = brandNameMap[reward.brandKey] || reward.displayName;
+                return (
+                  <div
+                    key={idx}
+                    className="border p-8 rounded-lg flex flex-col items-center text-center gap-4 bg-forest-light"
+                  >
+                    {lastImage && (
+                      <img
+                        src={lastImage}
+                        alt={name}
+                        className="w-80 h-auto object-contain rounded"
+                      />
+                    )}
+                    <h3 className="text-lg font-semibold text-forest">{name}</h3>
+                    <p className="text-gray-600 text-sm">$10 <b>{name}</b> Gift Card</p>
+                    <button
+                      onClick={() => handleRedeem(reward.brandKey, reward.cost)}
+                      disabled={points < reward.cost}
+                      className={`text-white px-4 py-2 rounded-lg text-sm ${
+                        points < reward.cost
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700'
+                      }`}
+                    >
+                      Redeem ({reward.cost} pts)
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
