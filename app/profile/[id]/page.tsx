@@ -253,7 +253,7 @@ const ProfilePage = () => {
             if (response.ok) {
                 const chat = await response.json();
                 console.log('Chat created or found:', chat);
-                router.push(`/chat/${chat._id}`);
+                router.push(`/messages/${chat._id}`);
             } else {
                 const errorData = await response.json();
                 console.error("Failed to create/get chat:", errorData.msg || "Unknown error");

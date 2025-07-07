@@ -4,6 +4,8 @@ import { Icon } from "@iconify/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from 'next/link'
+
 
 interface User {
   _id: string;
@@ -59,21 +61,21 @@ export default function NavBar() {
   }, []);
 
   useEffect(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    // Check if the click is outside the dropdown's container
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-      // Use the functional update to avoid stale state issues with setDropdownOpen
-      setDropdownOpen(false);
-    }
-  };
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if the click is outside the dropdown's container
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // Use the functional update to avoid stale state issues with setDropdownOpen
+        setDropdownOpen(false);
+      }
+    };
 
-  // Use the 'click' event instead of 'mousedown'
-  // This helps prevent race conditions
-  document.addEventListener("click", handleClickOutside);
+    // Use the 'click' event instead of 'mousedown'
+    // This helps prevent race conditions
+    document.addEventListener("click", handleClickOutside);
 
-  // Clean up the event listener on unmount
-  return () => document.removeEventListener("click", handleClickOutside);
-}, [dropdownOpen]);
+    // Clean up the event listener on unmount
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -103,48 +105,52 @@ export default function NavBar() {
         </div>
 
         <nav className="flex space-x-16 items-center">
-          <a href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</a>
-          <a href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Search</a>
-          <a href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</a>
-          <a href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</a>
-          <a href="/settings" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Settings</a>
+          <Link href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
+          <Link href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Search</Link>
+          <Link href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</Link>
+          <Link href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</Link>
+          <Link href="/settings" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Settings</Link>
         </nav>
-
-        <div className="relative" ref={dropdownRef}>
-          {loading ? (
-            <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
-          ) : (
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
-            >
-              {renderProfileImage()}
-            </button>
-          )}
-
-          {dropdownOpen && !loading && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50"> {/* <-- CHANGE 'z-auto' to 'z-50' */}
+        <div className="flex items-center gap-5">
+          <Link href="/notifications" className="w-[32px] h-[32px] rounded-full bg-forest-light flex items-center justify-center hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">
+            <Icon icon="ph:bell-duotone" width="24" height="24" className="text-forest" />
+          </Link>
+          <div className="relative" ref={dropdownRef}>
+            {loading ? (
+              <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
+            ) : (
               <button
-                onClick={() => {
-                  if (user?._id) router.push(`/profile/${user._id}`);
-                }}
-                className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="w-[32px] h-[32px] rounded-full overflow-hidden focus:outline-none"
               >
-                View Profile
+                {renderProfileImage()}
               </button>
-              <button className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
-                <a href="/referral" >
-                  Refer a Friend
-                </a>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
-              >
-                Logout
-              </button>
-            </div>
-          )}
+            )}
+
+            {dropdownOpen && !loading && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50"> {/* <-- CHANGE 'z-auto' to 'z-50' */}
+                <button
+                  onClick={() => {
+                    if (user?._id) router.push(`/profile/${user._id}`);
+                  }}
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
+                >
+                  View Profile
+                </button>
+                <button className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
+                  <Link href="/referral" >
+                    Refer a Friend
+                  </Link>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -178,9 +184,9 @@ export default function NavBar() {
                   View your Profile
                 </button>) : null}
               <button>
-                <a href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
+                <Link href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
                   Refer a Friend
-                </a>
+                </Link>
               </button>
               <button
                 onClick={handleLogout}

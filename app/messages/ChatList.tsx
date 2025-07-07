@@ -129,13 +129,17 @@ const ChatList: React.FC = () => {
         router.push(`/messages/${chatId}`);
     };
 
+    const handleProfileClick = (userId: string) => {
+        router.push(`/profile/${userId}`);
+    };
+
     const getOtherMemberInfo = (chat: Chat) => {
         if (!loggedInUserId) {
             console.warn("[ChatList getOtherMemberInfo] called before loggedInUserId is set.");
-            return { name: "Loading User...", profilePic: undefined };
+            return { _id: '', name: "Loading User...", profilePic: undefined };
         }
         const otherMember = chat.members.find(member => member._id !== loggedInUserId);
-        return otherMember || { name: "Unknown User", profilePic: undefined };
+        return otherMember || { _id: '', name: "Unknown User", profilePic: undefined };
     };
 
     if (loading) {
@@ -191,7 +195,13 @@ const ChatList: React.FC = () => {
                                 }`}
                                 onClick={() => handleChatClick(chat._id)}
                             >
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 mr-3 sm:mr-4 bg-gray-200 flex items-center justify-center">
+                                <div 
+                                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 mr-3 sm:mr-4 bg-gray-200 flex items-center justify-center cursor-pointer"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent chat click from firing
+                                        if (otherMember._id) handleProfileClick(otherMember._id);
+                                    }}
+                                >
                                     {otherMember.profilePic ? (
                                         <img src={otherMember.profilePic} alt={otherMember.name} className="w-full h-full object-cover" />
                                     ) : (
