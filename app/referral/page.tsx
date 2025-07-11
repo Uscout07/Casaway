@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useRouter } from 'next/navigation';
 import {
   FacebookShareButton,
   WhatsappShareButton,
@@ -17,13 +18,22 @@ interface Reward {
   cost: number;
 }
 
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  role: "user" | "admin" | "ambassador";
+}
+
 const brandNameMap: Record<string, string> = {
   B916708: 'Amazon.com',
   B795341: 'Uber',
 };
 
 export default function ReferralPage() {
-  const [userId, setUserId] = useState<string>('');
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState('');
   const [referralLink, setReferralLink] = useState('');
   const [points, setPoints] = useState(0);
@@ -34,16 +44,50 @@ export default function ReferralPage() {
   const [rewardsLoading, setRewardsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) return;
-    const parsedUser = JSON.parse(storedUser);
-    setUserId(parsedUser._id);
-  }, []);
+    const checkUserAccess = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/auth");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          localStorage.removeItem("token");
+          router.push("/auth");
+          return;
+        }
+
+        const userData = await res.json();
+        
+        // Check if user is an ambassador
+        if (userData.role !== "ambassador") {
+          router.push("/"); // Redirect to home if not an ambassador
+          return;
+        }
+
+        setUser(userData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        localStorage.removeItem("token");
+        router.push("/auth");
+      }
+    };
+
+    checkUserAccess();
+  }, [router]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!user) return;
 
-    fetch(`${API_BASE_URL}/api/referral/${userId}`)
+    fetch(`${API_BASE_URL}/api/referral/${user._id}`)
       .then(res => res.json())
       .then(data => {
         setReferralCode(data.referralCode);
@@ -52,9 +96,11 @@ export default function ReferralPage() {
         setReferralCount(data.referralCount);
       })
       .catch(err => console.error('Error fetching referral data:', err));
-  }, [userId]);
+  }, [user]);
 
   useEffect(() => {
+    if (!user) return;
+
     fetch(`${API_BASE_URL}/api/rewards/catalog`)
       .then(res => res.json())
       .then((data: { brands: Reward[] }) => {
@@ -65,7 +111,7 @@ export default function ReferralPage() {
         console.error('Error fetching catalog:', err);
         setRewardsLoading(false);
       });
-  }, []);
+  }, [user]);
 
   const handleCopy = () => {
     if (!referralLink) return;
@@ -81,7 +127,7 @@ export default function ReferralPage() {
   };
 
   const handleRedeem = async (brandKey: string, cost: number) => {
-    if (!userId) return alert('Please log in first.');
+    if (!user) return alert('Please log in first.');
 
     if (points < cost) {
       return alert('Not enough points to redeem this reward.');
@@ -91,7 +137,7 @@ export default function ReferralPage() {
       const res = await fetch(`${API_BASE_URL}/api/redeem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, brandKey, value: cost }),
+        body: JSON.stringify({ userId: user._id, brandKey, value: cost }),
       });
 
       const data = await res.json();
@@ -104,6 +150,31 @@ export default function ReferralPage() {
       setMessage(err.message || 'Something went wrong');
     }
   };
+
+  // Show loading state while checking user access
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ambient pt-[12vh] px-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-forest mx-auto mb-4"></div>
+          <p className="text-forest">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // This should not render if user is not ambassador due to redirect, but adding as fallback
+  if (!user || user.role !== "ambassador") {
+    return (
+      <div className="min-h-screen bg-ambient pt-[12vh] px-6 flex items-center justify-center">
+        <div className="text-center">
+          <Icon icon="mdi:lock" className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-forest mb-2">Access Denied</h1>
+          <p className="text-slate">This page is only available for ambassadors.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-ambient pt-[12vh] px-6 flex flex-col gap-8 text-slate">

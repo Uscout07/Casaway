@@ -12,6 +12,7 @@ interface User {
   name: string;
   username: string;
   profilePic?: string;
+  role: "user" | "admin" | "ambassador";
 }
 
 export default function NavBar() {
@@ -110,6 +111,12 @@ export default function NavBar() {
           <Link href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</Link>
           <Link href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</Link>
           <Link href="/settings" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Settings</Link>
+          {user?.role === "ambassador" && (
+            <Link href="/referral" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Refer a Friend</Link>
+          )}
+          {user?.role === "admin" && (
+            <Link href="/admin" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Admin</Link>
+          )}
         </nav>
         <div className="flex items-center gap-5">
           <Link href="/notifications" className="w-[32px] h-[32px] rounded-full bg-forest-light flex items-center justify-center hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">
@@ -128,7 +135,7 @@ export default function NavBar() {
             )}
 
             {dropdownOpen && !loading && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50"> {/* <-- CHANGE 'z-auto' to 'z-50' */}
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
                 <button
                   onClick={() => {
                     if (user?._id) router.push(`/profile/${user._id}`);
@@ -136,11 +143,6 @@ export default function NavBar() {
                   className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
                 >
                   View Profile
-                </button>
-                <button className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
-                  <Link href="/referral" >
-                    Refer a Friend
-                  </Link>
                 </button>
                 <button
                   onClick={handleLogout}
@@ -159,44 +161,43 @@ export default function NavBar() {
         <div className="flex items-center space-x-2">
           <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
         </div>
-
-        <div className="relative" ref={dropdownRef}>
-          {loading ? (
-            <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
-          ) : (
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="rounded-full overflow-hidden focus:outline-none"
-            >
-              {renderProfileImage()}
-            </button>
-          )}
-
-          {dropdownOpen && !loading && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-              {user?._id ?
-                (<button
-                  onClick={() => {
-                    if (user?._id) router.push(`/profile/${user._id}`);
-                  }}
-                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
-                >
-                  View your Profile
-                </button>) : null}
-              <button>
-                <Link href="/referral" className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left">
-                  Refer a Friend
-                </Link>
-              </button>
+        <div className="flex items-center gap-5">
+          <Link href="/notifications" className="w-[40px] h-[40px] rounded-full bg-forest-light flex items-center justify-center hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">
+            <Icon icon="ph:bell-duotone" width="28" height="28" className="text-forest" />
+          </Link>
+          <div className="relative" ref={dropdownRef}>
+            {loading ? (
+              <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
+            ) : (
               <button
-                onClick={handleLogout}
-                className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="rounded-full overflow-hidden focus:outline-none"
               >
-                Logout
+                {renderProfileImage()}
               </button>
+            )}
 
-            </div>
-          )}
+            {dropdownOpen && !loading && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                {user?._id && (
+                  <button
+                    onClick={() => {
+                      if (user?._id) router.push(`/profile/${user._id}`);
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
+                  >
+                    View your Profile
+                  </button>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
