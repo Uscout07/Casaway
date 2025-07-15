@@ -132,10 +132,10 @@ export default function StoryUpload() {
     <div className="w-full max-w-full mx-auto bg-ambient rounded-xl px-4 py-6 sm:px-6 space-y-6 flex max-md:flex-col items-center md:items-start justify-evenly">
 
       {/* Media Upload Section */}
-      <div className="bg-white w-[300px] md:w-[400px] aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+      <div className="bg-white w-[300px] md:w-[400px] aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative border-2 border-dashed border-forest-medium hover:border-forest-green transition-colors cursor-pointer">
         <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-forest-medium mx-auto mb-4" />
         <p className="text-gray-600 mb-4">
-          {file ? `Selected: ${file.name}` : 'Upload Images or Videos for Your Story'}
+          {file ? `Selected: ${file.name}` : 'Drag & Drop or Click to Upload Images or Videos for Your Story'}
         </p>
         <input
           type="file"
@@ -149,9 +149,8 @@ export default function StoryUpload() {
         />
         <label
           htmlFor="story-media-upload"
-          className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center text-forest-medium text-sm font-semibold hover:bg-gray-50 bg-opacity-50 transition-colors"
+          className="absolute inset-0 z-10 cursor-pointer"
         >
-          
         </label>
         {file && (
             <div className="mt-2 text-xs text-gray-500">
@@ -170,7 +169,7 @@ export default function StoryUpload() {
           rows={3}
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          className="w-full p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-forest resize-none text-sm"
+          className="w-full p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest resize-none text-sm"
           placeholder="Add a caption to your story..."
         />
          <div className="pt-2">

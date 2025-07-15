@@ -297,9 +297,9 @@ const UploadListingPage = () => {
                     onClick={() => handleDateClick(day)}
                     className={`
           p-2 text-sm rounded-lg transition-colors
-          ${isSelected ? 'bg-teal-600 text-white font-bold' :
-                            inRange ? 'bg-teal-200 text-gray-900' :
-                                'hover:bg-teal-100 text-gray-700'}
+          ${isSelected ? 'bg-forest text-white font-bold' :
+                            inRange ? 'bg-mint text-gray-900' :
+                                'hover:bg-forest-light text-gray-700'}
         `}
                 >
                     {day}
@@ -463,7 +463,7 @@ const UploadListingPage = () => {
                 <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1 w-full max-w-xl sm:max-w-3xl">
                     <button
                         onClick={() => setViewMode('listing')}
-                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6 lg:px-8 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
+                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6  rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
                         ${viewMode === 'listing' ? 'text-white bg-forest' : 'text-white'}`}
                     >
                         <span className="hidden sm:inline">Create a Listing</span>
@@ -485,13 +485,6 @@ const UploadListingPage = () => {
                         <span className="hidden sm:inline">Create a Story</span>
                         <span className="sm:hidden">Story</span>
                     </button>
-                    <div
-                        className={`absolute top-1 bottom-1 w-1/2 bg-forest-green rounded-full shadow-md transition-transform duration-300 ease-in-out
-                        ${viewMode === 'listing' ? 'left-1' : 'left-1/2'}`}
-                        style={{
-                            transform: viewMode === 'listing' ? 'translateX(0)' : 'translateX(calc(100% - 8px))'
-                        }}
-                    ></div>
                 </div>
             </div>
 
@@ -500,9 +493,9 @@ const UploadListingPage = () => {
                     {/* Left Column - Images and Calendar */}
                     <div className="w-full max-w-[400px] xl:w-2/5 2xl:w-1/3 flex flex-col space-y-4 sm:space-y-6 mb-6 xl:mb-0">
                         {/* Image Upload Section */}
-                        <div className="bg-white w-full aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+                        <div className="bg-white w-full aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative border-2 border-dashed border-forest-medium hover:border-forest-green transition-colors cursor-pointer">
                             <Icon icon="material-symbols:upload-rounded" className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 text-forest-medium mx-auto mb-3 sm:mb-4" />
-                            <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base">Upload Images of Your Property</p>
+                            <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base">Drag & Drop or Click to Upload Images (Max 10)</p>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -513,9 +506,8 @@ const UploadListingPage = () => {
                             />
                             <label
                                 htmlFor="image-upload"
-                                className="absolute inset-0 z-20 opacity-0 cursor-pointer"
+                                className="absolute inset-0 z-20 cursor-pointer"
                             >
-                                Choose Images
                             </label>
                         </div>
 
@@ -535,12 +527,12 @@ const UploadListingPage = () => {
                                             />
                                             <button
                                                 onClick={() => removeImage(image.id)}
-                                                className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-coral text-white rounded-full p-1 hover:bg-red-600"
+                                                className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-coral text-white rounded-full p-1 hover:bg-coral-dark transition-colors z-10"
                                             >
                                                 <Icon icon="mdi:close" className="w-2 h-2 sm:w-3 sm:h-3" />
                                             </button>
                                             {thumbnailIndex === index && (
-                                                <span className="absolute bottom-0 left-0 bg-teal-600 text-white text-xs px-1 sm:px-2 py-1 rounded-tr-lg">
+                                                <span className="absolute bottom-0 left-0 bg-forest text-white text-xs px-1 sm:px-2 py-1 rounded-tr-lg">
                                                     Thumbnail
                                                 </span>
                                             )}
@@ -594,8 +586,8 @@ const UploadListingPage = () => {
                                 <button
                                     onClick={() => handleSpaceTypeSelect('Single Room')}
                                     className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Single Room'
-                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                        : 'border-forest'
+                                        ? 'border-forest-green bg-mint text-forest'
+                                        : 'border-forest-light'
                                         }`}
                                 >
                                     <Icon icon="mdi:guest-room-outline" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
@@ -605,8 +597,8 @@ const UploadListingPage = () => {
                                 <button
                                     onClick={() => handleSpaceTypeSelect('Whole Apartment')}
                                     className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole Apartment'
-                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                        : 'border-forest'
+                                        ? 'border-forest-green bg-mint text-forest'
+                                        : 'border-forest-light'
                                         }`}
                                 >
                                     <Icon icon="ph:building-apartment" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
@@ -616,8 +608,8 @@ const UploadListingPage = () => {
                                 <button
                                     onClick={() => handleSpaceTypeSelect('Whole House')}
                                     className={`sm:col-span-2 lg:col-span-1 xl:col-span-2 2xl:col-span-1 p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex bg-forest-light text-forest items-center justify-center gap-2 sm:gap-3 md:gap-4 transition-colors ${listingType === 'Whole House'
-                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                        : 'border-forest'
+                                        ? 'border-forest-green bg-mint text-forest'
+                                        : 'border-forest-light'
                                         }`}
                                 >
                                     <Icon icon="solar:home-linear" className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
@@ -634,8 +626,8 @@ const UploadListingPage = () => {
                                     <button
                                         onClick={() => handleLivingWithToggle('family')}
                                         className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('family')
-                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                            : 'border-forest'
+                                            ? 'border-forest-green bg-mint text-forest'
+                                            : 'border-forest-light'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 sm:gap-3">
@@ -643,15 +635,15 @@ const UploadListingPage = () => {
                                             <span className="text-xs sm:text-sm md:text-base">Family</span>
                                         </div>
                                         {livingWith.includes('family') && (
-                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-forest-green" />
                                         )}
                                     </button>
 
                                     <button
                                         onClick={() => handleLivingWithToggle('roommates')}
                                         className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('roommates') // Corrected to check for 'roommates'
-                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                            : 'border-forest'
+                                            ? 'border-forest-green bg-mint text-forest'
+                                            : 'border-forest-light'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 sm:gap-3">
@@ -659,7 +651,7 @@ const UploadListingPage = () => {
                                             <span className="text-xs sm:text-sm md:text-base">Roommates</span>
                                         </div>
                                         {livingWith.includes('roommates') && ( // Corrected to check for 'roommates'
-                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-forest-green" />
                                         )}
                                     </button>
 
@@ -686,8 +678,8 @@ const UploadListingPage = () => {
                                             <button
                                                 onClick={() => handleLivingWithToggle('females-only')}
                                                 className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('females-only')
-                                                    ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                    : 'border-forest'
+                                                    ? 'border-forest-green bg-mint text-forest'
+                                                    : 'border-forest-light'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-2 sm:gap-3">
@@ -695,7 +687,7 @@ const UploadListingPage = () => {
                                                     <span className="text-xs sm:text-sm md:text-base">Available for women only</span>
                                                 </div>
                                                 {livingWith.includes('females-only') && (
-                                                    <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                                    <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-forest-green" />
                                                 )}
                                             </button>
                                         </div>
@@ -704,8 +696,8 @@ const UploadListingPage = () => {
                                     <button
                                         onClick={() => handleLivingWithToggle('pets')}
                                         className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('pets')
-                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                            : 'border-forest'
+                                            ? 'border-forest-green bg-mint text-forest'
+                                            : 'border-forest-light'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 sm:gap-3">
@@ -713,7 +705,7 @@ const UploadListingPage = () => {
                                             <span className="text-xs sm:text-sm md:text-base">Pets</span>
                                         </div>
                                         {livingWith.includes('pets') && (
-                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
+                                            <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-forest-green" />
                                         )}
                                     </button>
 
@@ -724,8 +716,8 @@ const UploadListingPage = () => {
                                                 <button
                                                     onClick={() => handlePetTypeToggle('dogs')}
                                                     className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('dogs')
-                                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                        : 'border-forest'
+                                                        ? 'border-forest-green bg-mint text-forest'
+                                                        : 'border-forest-light'
                                                         }`}
                                                 >
                                                     <Icon icon="mdi:dog" className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -735,8 +727,8 @@ const UploadListingPage = () => {
                                                 <button
                                                     onClick={() => handlePetTypeToggle('cats')}
                                                     className={`p-2 rounded-lg border-2 flex items-center gap-2 bg-forest-light text-forest transition-colors ${petTypes.includes('cats')
-                                                        ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                                        : 'border-forest'
+                                                        ? 'border-forest-green bg-mint text-forest'
+                                                        : 'border-forest-light'
                                                         }`}
                                                 >
                                                     <Icon icon="mdi:cat" className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -766,8 +758,8 @@ const UploadListingPage = () => {
                                         key={facility.id}
                                         onClick={() => handleFacilityToggle(facility.id)}
                                         className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFacilities.includes(facility.id)
-                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                            : 'border-forest'
+                                            ? 'border-forest-green bg-mint text-forest'
+                                            : 'border-forest-light'
                                             }`}
                                     >
                                         <Icon icon={facility.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
@@ -794,8 +786,8 @@ const UploadListingPage = () => {
                                         key={feature.id}
                                         onClick={() => handleFeatureToggle(feature.id)}
                                         className={`p-3 sm:p-4 rounded-lg border-2 h-16 sm:h-20 md:h-24 flex items-center justify-center gap-2 sm:gap-3 md:gap-4 bg-forest-light text-forest transition-colors ${selectedFeatures.includes(feature.id)
-                                            ? 'border-teal-600 bg-teal-50 text-teal-700'
-                                            : 'border-forest'
+                                            ? 'border-forest-green bg-mint text-forest'
+                                            : 'border-forest-light'
                                             }`}
                                     >
                                         <Icon icon={feature.icon} className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12" />
@@ -838,7 +830,7 @@ const UploadListingPage = () => {
                                         setWifiUploadSpeed(upload); // Set upload speed
                                         setIsLoading(false);
                                     }}
-                                    className="w-max px-3 py-2 text-xs sm:text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                                    className="w-max px-3 py-2 text-xs sm:text-sm bg-forest text-white rounded-lg hover:bg-forest-dark transition"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? 'Testing...' : 'Retest Wi-Fi Speed'}
@@ -855,7 +847,7 @@ const UploadListingPage = () => {
                                     type="text"
                                     value={formData.country}
                                     onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                    className="w-full p-2 sm:p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest text-xs sm:text-sm"
                                 />
                             </div>
 
@@ -865,7 +857,7 @@ const UploadListingPage = () => {
                                     type="text"
                                     value={formData.city}
                                     onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                    className="w-full p-2 sm:p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest text-xs sm:text-sm"
                                 />
                             </div>
 
@@ -875,7 +867,7 @@ const UploadListingPage = () => {
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                                    className="w-full p-2 sm:p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-forest focus:border-forest text-forest text-xs sm:text-sm"
+                                    className="w-full p-2 sm:p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest text-xs sm:text-sm"
                                 />
                             </div>
 

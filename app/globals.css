@@ -9,6 +9,12 @@
   --color-ambient: #F8EFE0;
   --color-forest-light: hsla(158, 19%, 64%, 0.25);
   --color-forest-medium: #678E7B;
+  --color-forest-dark: #1A3D31;
+  --color-forest-green: #3D7A67;
+  --color-teal-50: #E0F2F2;
+  --color-teal-200: #B2DFDB;
+  --color-teal-600: #008080;
+  --color-teal-700: #006666;
   --font-inter: 'Inter', sans-serif;
 
 }

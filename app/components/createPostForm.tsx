@@ -135,9 +135,9 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
     <div className="w-full max-w-full mx-auto bg-ambient rounded-xl px-4 py-6 sm:px-6 space-y-6 flex max-md:flex-col items-center md:items-start justify-evenly">
       {/* Left side - Image Upload */}
       <div className="w-full flex flex-col">
-        <div className="bg-white w-[300px] md:w-[400px] aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative">
+        <div className="bg-white w-[300px] md:w-[400px] aspect-square rounded-lg p-6 flex flex-col items-center justify-center text-center relative border-2 border-dashed border-forest-medium hover:border-forest-green transition-colors cursor-pointer">
           <Icon icon="material-symbols:upload-rounded" className="w-16 h-16 text-forest-medium mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Upload Images for Your Post</p>
+          <p className="text-gray-600 mb-4">Drag & Drop or Click to Upload Images (Max 10)</p>
           <input
             type="file"
             accept="image/*"
@@ -192,7 +192,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
               type="text"
               value={countryInput}
               onChange={(e) => setCountryInput(e.target.value)}
-              className="w-full p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-forest"
+              className="w-full p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest"
               placeholder="e.g., India"
               required
             />
@@ -208,7 +208,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
               type="text"
               value={cityInput}
               onChange={(e) => setCityInput(e.target.value)}
-              className="w-full p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-forest"
+              className="w-full p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest"
               placeholder="e.g., Asoda Todran"
               required
             />
@@ -224,7 +224,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
               rows={4}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
-              className="w-full p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-forest resize-none"
+              className="w-full p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest resize-none"
               placeholder="Write your post caption here..."
               required
             />
@@ -240,7 +240,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
               type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full p-3 border-2 border-forest bg-forest-light rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-forest"
+              className="w-full p-3 border-2 border-forest-light bg-ambient rounded-lg focus:ring-2 focus:ring-forest-green focus:border-forest-green text-forest"
               placeholder="e.g., travel, adventure, homestay"
             />
           </div>
@@ -252,7 +252,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <button
               onClick={() => handleSubmitPost('draft')}
               disabled={isLoading}
-              className="flex-1 bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
+              className="flex-1 bg-slate text-white py-3 rounded-lg font-medium hover:bg-slate-dark transition-colors disabled:opacity-50"
             >
               {isLoading ? 'Saving...' : 'Save As Draft'}
             </button>
@@ -260,7 +260,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
             <button
               onClick={() => handleSubmitPost('published')}
               disabled={isLoading || !selectedImages.length || !caption.trim() || !countryInput.trim() || !cityInput.trim()}
-              className="flex-1 bg-teal-600 text-white py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50"
+              className="flex-1 bg-forest text-white py-3 rounded-lg font-medium hover:bg-forest-dark transition-colors disabled:opacity-50"
             >
               {isLoading ? 'Publishing...' : 'Publish Post'}
             </button>
