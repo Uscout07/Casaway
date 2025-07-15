@@ -232,7 +232,7 @@ const UploadListingPage = () => {
         setPetTypes(prev =>
             prev.includes(petType)
                 ? prev.filter(type => type !== petType)
-                : [...prev, type]
+                : [...prev, petType]
         );
     };
 
@@ -450,11 +450,7 @@ const UploadListingPage = () => {
         // For this example, we just show an alert in CreatePostForm
     };
 
-    interface CreatePostFormProps {
-        country: string;
-        city: string;
-        onPostCreated: () => void;
-    }
+    
 
     return (
         <div className="min-h-screen bg-ambient font-inter pt-[8vh] sm:pt-[10vh] px-3 sm:px-4 md:px-6 lg:px-8">
