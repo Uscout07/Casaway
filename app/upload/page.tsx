@@ -2,6 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import SpeedTest from '@cloudflare/speedtest';
 import CreatePostForm from '../components/createPostForm'; // Import the new component
 import StoryUpload from '../components/storyUpload';
 
@@ -82,75 +83,35 @@ const UploadListingPage = () => {
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"];
 
-    const testWifiSpeed = async (): Promise<{ download: number; upload: number }> => {
-        const downloadTestUrls = [
-            'https://speed.cloudflare.com/__down?bytes=10000000', // 10MB
-        ];
+  
+const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
+  return new Promise((resolve) => {
+    const speedtest = new SpeedTest();
 
-        const uploadTestUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/speedtest/upload`;
-        const dummyFileSize = 5 * 1024 * 1024; // 5MB dummy file for upload test
+    speedtest.onFinish = (results) => {
+      const downloadBits = results.getDownloadBandwidth() || 0;
+      const uploadBits = results.getUploadBandwidth() || 0;
 
-        const successfulDownloadSpeeds: number[] = [];
+      const downloadMbps = downloadBits / 1_000_000;
+      const uploadMbps = uploadBits / 1_000_000;
 
-        // --- Download Test ---
-        for (const url of downloadTestUrls) {
-            try {
-                const start = new Date().getTime();
-                const response = await fetch(url);
-                const end = new Date().getTime();
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const blob = await response.blob();
-                const fileSizeUsedForCalc = blob.size; // Use actual blob size
-
-                const duration = (end - start) / 1000; // seconds
-                if (duration > 0) { // Avoid division by zero
-                    const speedMbps = (fileSizeUsedForCalc * 8) / (duration * 1024 * 1024); // Convert bytes to bits, then to Mbps
-                    successfulDownloadSpeeds.push(parseFloat(speedMbps.toFixed(2)));
-                }
-            } catch (error) {
-                console.error(`Failed to download from ${url}:`, error);
-            }
-        }
-
-        const downloadSpeed = successfulDownloadSpeeds.length > 0
-            ? successfulDownloadSpeeds.reduce((sum, speed) => sum + speed, 0) / successfulDownloadSpeeds.length
-            : 0;
-
-        // --- Upload Test ---
-        let uploadSpeed = 0;
-        try {
-            const dummyData = new Blob([new ArrayBuffer(dummyFileSize)], { type: 'application/octet-stream' });
-            const formData = new FormData();
-            formData.append('speedTestFile', dummyData, 'dummy_upload_file.bin');
-
-            const start = new Date().getTime();
-            const response = await fetch(uploadTestUrl, {
-                method: 'POST',
-                body: formData,
-            });
-            const end = new Date().getTime();
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const duration = (end - start) / 1000; // seconds
-            if (duration > 0) {
-                uploadSpeed = (dummyFileSize * 8) / (duration * 1024 * 1024); // Convert bytes to bits, then to Mbps
-                uploadSpeed = parseFloat(uploadSpeed.toFixed(2));
-            }
-        } catch (error) {
-            console.error(`Failed to upload to ${uploadTestUrl}:`, error);
-            // If upload fails, set speed to 0 or a suitable error indicator
-            uploadSpeed = 0;
-        }
-
-        return { download: parseFloat(downloadSpeed.toFixed(2)), upload: uploadSpeed };
+      resolve({
+        download: parseFloat(downloadMbps.toFixed(2)),
+        upload: parseFloat(uploadMbps.toFixed(2)),
+      });
     };
+
+    speedtest.onError = (err) => {
+      console.error('Speed test failed:', err);
+      resolve({ download: 0, upload: 0 });
+    };
+
+    speedtest.play(); // Starts the test
+  });
+};
+
+
+
 
 
     useEffect(() => {
@@ -450,7 +411,7 @@ const UploadListingPage = () => {
         // For this example, we just show an alert in CreatePostForm
     };
 
-    
+
 
     return (
         <div className="min-h-screen bg-ambient font-inter pt-[8vh] sm:pt-[10vh] px-3 sm:px-4 md:px-6 lg:px-8">

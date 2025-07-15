@@ -1,13 +1,13 @@
 [{
 	"resource": "/C:/Users/pantu/OneDrive/Desktop/Udit/Projects/Comercial/Casway Project/casaway-web/app/upload/page.tsx",
 	"owner": "typescript",
-	"code": "2304",
+	"code": "2339",
 	"severity": 8,
-	"message": "Cannot find name 'type'.",
+	"message": "Property 'run' does not exist on type 'SpeedTestEngine'.",
 	"source": "ts",
-	"startLineNumber": 235,
-	"startColumn": 29,
-	"endLineNumber": 235,
-	"endColumn": 33,
+	"startLineNumber": 91,
+	"startColumn": 45,
+	"endLineNumber": 91,
+	"endColumn": 48,
 	"origin": "extHost1"
 }]
