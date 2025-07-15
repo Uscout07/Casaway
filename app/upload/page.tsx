@@ -42,6 +42,8 @@ const UploadListingPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [viewMode, setViewMode] = useState<'listing' | 'post' | 'story'>('listing'); // New state for view mode
     const [thumbnailIndex, setThumbnailIndex] = useState(0);
+    const [wifiDownloadSpeed, setWifiDownloadSpeed] = useState<number | ''>('');
+    const [wifiUploadSpeed, setWifiUploadSpeed] = useState<number | ''>(''); // Corrected: wifiUploadSpeed state variable
     const [formData, setFormData] = useState({
         title: '',
         details: '',
@@ -80,6 +82,95 @@ const UploadListingPage = () => {
     const monthNames = ["January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"];
 
+    const testWifiSpeed = async (): Promise<{ download: number; upload: number }> => {
+        const downloadTestUrls = [
+            'https://speed.cloudflare.com/__down?bytes=10000000', // 10MB
+        ];
+
+        const uploadTestUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/speedtest/upload`;
+        const dummyFileSize = 5 * 1024 * 1024; // 5MB dummy file for upload test
+
+        const successfulDownloadSpeeds: number[] = [];
+
+        // --- Download Test ---
+        for (const url of downloadTestUrls) {
+            try {
+                const start = new Date().getTime();
+                const response = await fetch(url);
+                const end = new Date().getTime();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const fileSizeUsedForCalc = blob.size; // Use actual blob size
+
+                const duration = (end - start) / 1000; // seconds
+                if (duration > 0) { // Avoid division by zero
+                    const speedMbps = (fileSizeUsedForCalc * 8) / (duration * 1024 * 1024); // Convert bytes to bits, then to Mbps
+                    successfulDownloadSpeeds.push(parseFloat(speedMbps.toFixed(2)));
+                }
+            } catch (error) {
+                console.error(`Failed to download from ${url}:`, error);
+            }
+        }
+
+        const downloadSpeed = successfulDownloadSpeeds.length > 0
+            ? successfulDownloadSpeeds.reduce((sum, speed) => sum + speed, 0) / successfulDownloadSpeeds.length
+            : 0;
+
+        // --- Upload Test ---
+        let uploadSpeed = 0;
+        try {
+            const dummyData = new Blob([new ArrayBuffer(dummyFileSize)], { type: 'application/octet-stream' });
+            const formData = new FormData();
+            formData.append('speedTestFile', dummyData, 'dummy_upload_file.bin');
+
+            const start = new Date().getTime();
+            const response = await fetch(uploadTestUrl, {
+                method: 'POST',
+                body: formData,
+            });
+            const end = new Date().getTime();
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const duration = (end - start) / 1000; // seconds
+            if (duration > 0) {
+                uploadSpeed = (dummyFileSize * 8) / (duration * 1024 * 1024); // Convert bytes to bits, then to Mbps
+                uploadSpeed = parseFloat(uploadSpeed.toFixed(2));
+            }
+        } catch (error) {
+            console.error(`Failed to upload to ${uploadTestUrl}:`, error);
+            // If upload fails, set speed to 0 or a suitable error indicator
+            uploadSpeed = 0;
+        }
+
+        return { download: parseFloat(downloadSpeed.toFixed(2)), upload: uploadSpeed };
+    };
+
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const modeFromUrl = params.get('mode');
+
+        if (modeFromUrl === 'story') setViewMode('story');
+        else if (modeFromUrl === 'post') setViewMode('post');
+        else setViewMode('listing');
+
+        // Auto-run speed test on load
+        testWifiSpeed().then(({ download, upload }) => { // Destructure both download and upload
+            console.log('[testWifiSpeed] Download Speed:', download, 'Mbps');
+            console.log('[testWifiSpeed] Upload Speed:', upload, 'Mbps');
+            setWifiDownloadSpeed(download);
+            setWifiUploadSpeed(upload); // Set upload speed
+        });
+    }, []);
+
+
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files) return;
         const files = Array.from(event.target.files);
@@ -103,17 +194,6 @@ const UploadListingPage = () => {
         });
     };
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const modeFromUrl = params.get('mode');
-        if (modeFromUrl === 'story') {
-            setViewMode('story');
-        } else if (modeFromUrl === 'post') { // Added to handle explicit 'post' mode if needed
-            setViewMode('post');
-        } else {
-            setViewMode('listing'); // Default to listing
-        }
-    }, []);
 
     const removeImage = (imageId: number) => { // Added type for imageId
         setSelectedImages(prev => prev.filter(img => img.id !== imageId));
@@ -152,9 +232,10 @@ const UploadListingPage = () => {
         setPetTypes(prev =>
             prev.includes(petType)
                 ? prev.filter(type => type !== petType)
-                : [...prev, petType]
+                : [...prev, type]
         );
     };
+
 
     const getDaysInMonth = (month: number, year: number) => { // Added types
         return new Date(year, month + 1, 0).getDate();
@@ -215,7 +296,7 @@ const UploadListingPage = () => {
                     key={dateStr}
                     onClick={() => handleDateClick(day)}
                     className={`
-          p-2 text-sm rounded-lg transition-colors 
+          p-2 text-sm rounded-lg transition-colors
           ${isSelected ? 'bg-teal-600 text-white font-bold' :
                             inRange ? 'bg-teal-200 text-gray-900' :
                                 'hover:bg-teal-100 text-gray-700'}
@@ -272,18 +353,18 @@ const UploadListingPage = () => {
             : [];
 
         const amenities = [
-  ...selectedFacilities,
-  ...(customFacilities ? [customFacilities] : [])
-];
+            ...selectedFacilities,
+            ...(customFacilities ? [customFacilities] : [])
+        ];
 
-const features = [
-  ...selectedFeatures,
-  ...(customFeatures ? [customFeatures] : [])
-];
+        const features = [
+            ...selectedFeatures,
+            ...(customFeatures ? [customFeatures] : [])
+        ];
 
-const tags = [];
-if (livingWith.includes('family')) tags.push('Family');
-if (livingWith.includes('roommates-women') || livingWith.includes('females-only')) tags.push('Women Only');
+        const tags = [];
+        if (livingWith.includes('family')) tags.push('Family');
+        if (livingWith.includes('roommates-women') || livingWith.includes('females-only')) tags.push('Women Only');
         if (listingType === 'Single Room') {
             if (livingWith.includes('family')) tags.push('Family');
             if (livingWith.includes('roommates-women')) tags.push('Women Only');
@@ -304,6 +385,11 @@ if (livingWith.includes('roommates-women') || livingWith.includes('females-only'
         }
         if (livingWith.includes('females-only')) tags.push('women-only');
 
+        const wifiSpeedData = {
+            download: typeof wifiDownloadSpeed === 'number' ? wifiDownloadSpeed : 0,
+            upload: typeof wifiUploadSpeed === 'number' ? wifiUploadSpeed : 0, // Ensure upload is also included
+        };
+
         const listingData = {
             title: formData.title,
             details: formData.details,
@@ -318,11 +404,15 @@ if (livingWith.includes('roommates-women') || livingWith.includes('females-only'
             thumbnail: imageUrls[thumbnailIndex] || imageUrls[0] || '',
             status,
             roommates,
-            petTypes
+            petTypes,
+            wifiSpeed: wifiSpeedData,
+
         };
+
 
         try {
             console.log('[handleSubmitListing] Submitting listing data:', listingData);
+            console.log('[handleSubmitListing] Authorization Token:', token); // Log the token here
 
             // 3. Perform the fetch request with correct URL and headers
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/listing`, { // Corrected: '/api/listing' (singular)
@@ -563,7 +653,7 @@ if (livingWith.includes('roommates-women') || livingWith.includes('females-only'
 
                                     <button
                                         onClick={() => handleLivingWithToggle('roommates')}
-                                        className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('roommates-women')
+                                        className={`w-full p-2 sm:p-3 rounded-lg border-2 flex items-center justify-between bg-forest-light text-forest transition-colors ${livingWith.includes('roommates') // Corrected to check for 'roommates'
                                             ? 'border-teal-600 bg-teal-50 text-teal-700'
                                             : 'border-forest'
                                             }`}
@@ -572,7 +662,7 @@ if (livingWith.includes('roommates-women') || livingWith.includes('females-only'
                                             <Icon icon="mdi:account-group" className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                                             <span className="text-xs sm:text-sm md:text-base">Roommates</span>
                                         </div>
-                                        {livingWith.includes('roommates-women') && (
+                                        {livingWith.includes('roommates') && ( // Corrected to check for 'roommates'
                                             <Icon icon="mdi:check" className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-teal-600" />
                                         )}
                                     </button>
@@ -726,6 +816,40 @@ if (livingWith.includes('roommates-women') || livingWith.includes('females-only'
                                 className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg text-xs sm:text-sm"
                             />
                         </div>
+
+                        {/* Wifi Speed Section */}
+                        <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+                            <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Wi-Fi Speed (Mbps)</h3>
+
+                            <div className="flex flex-col gap-2">
+                                {isLoading ? (
+                                    <p className="text-xs text-gray-600">Testing Wi-Fi speed, please wait...</p>
+                                ) : (
+                                    <>
+                                        <div className="text-sm text-gray-700">
+                                            <strong>Download:</strong> {wifiDownloadSpeed ? `${wifiDownloadSpeed} Mbps` : 'N/A'}
+                                        </div>
+                                        <div className="text-sm text-gray-700">
+                                            <strong>Upload:</strong> {wifiUploadSpeed ? `${wifiUploadSpeed} Mbps` : 'N/A'}
+                                        </div>
+                                    </>
+                                )}
+                                <button
+                                    onClick={async () => {
+                                        setIsLoading(true);
+                                        const { download, upload } = await testWifiSpeed(); // Destructure both download and upload
+                                        setWifiDownloadSpeed(download);
+                                        setWifiUploadSpeed(upload); // Set upload speed
+                                        setIsLoading(false);
+                                    }}
+                                    className="w-max px-3 py-2 text-xs sm:text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Testing...' : 'Retest Wi-Fi Speed'}
+                                </button>
+                            </div>
+                        </div>
+
 
                         {/* Basic Information */}
                         <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
