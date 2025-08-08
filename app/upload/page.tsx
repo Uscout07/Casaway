@@ -41,7 +41,7 @@ const UploadListingPage = () => {
         end: null
     });
     const [isLoading, setIsLoading] = useState(false);
-    const [viewMode, setViewMode] = useState<'listing' | 'post' | 'story'>('listing'); // New state for view mode
+    const [viewMode, setViewMode] = useState<'listing' | 'post' | 'story'>('post'); // New state for view mode
     const [thumbnailIndex, setThumbnailIndex] = useState(0);
     const [wifiDownloadSpeed, setWifiDownloadSpeed] = useState<number | ''>('');
     const [wifiUploadSpeed, setWifiUploadSpeed] = useState<number | ''>(''); // Corrected: wifiUploadSpeed state variable
