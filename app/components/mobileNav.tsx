@@ -12,7 +12,13 @@ export default function MobileNav() {
         />
         Search
       </Link>
-      
+      <Link href="/upload" className="flex flex-col items-center justify-evenly text-[8px] gap-1">
+        <Icon
+          icon="icons8:plus"
+          className="w-[24px] h-[24px] flex-shrink-0"
+        />
+        Upload
+      </Link>
       <Link href="/" className="flex flex-col items-center justify-evenly text-[8px] gap-1">
         <Image width={0} height={0} className="w-full h-full" src="/ambientLogo.png" alt={'logo'}/>
         Home

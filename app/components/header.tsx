@@ -106,9 +106,9 @@ export default function NavBar() {
         </div>
 
         <nav className="flex space-x-16 items-center">
-          <Link href="/home" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
+          <Link href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
           <Link href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Search</Link>
-          <Link href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</Link>
+          <Link href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</Link>
           <Link href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</Link>
           <Link href="/settings" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Settings</Link>
           {user?.role === "ambassador" && (
@@ -136,7 +136,14 @@ export default function NavBar() {
 
             {dropdownOpen && !loading && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                
+                <button
+                  onClick={() => {
+                    if (user?._id) router.push(`/profile/${user._id}`);
+                  }}
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left"
+                >
+                  View Profile
+                </button>
                 <button
                   onClick={handleLogout}
                   className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
