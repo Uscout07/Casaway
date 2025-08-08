@@ -65,6 +65,13 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const currentStoryGroup = allStoryGroups[currentGroupIndex];
   const currentStory = currentStoryGroup?.stories[currentStoryIndex];
 
+  // Log current story media URL whenever it changes
+  useEffect(() => {
+    if (currentStory) {
+      console.log("Currently viewing story URL:", currentStory.mediaUrl);
+    }
+  }, [currentStory]);
+
   // Function to mark a story as viewed
   const markStoryAsViewed = useCallback(async (storyId: string) => {
     try {
@@ -200,6 +207,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   }, [currentStoryIndex, currentGroupIndex, currentStoryGroup, allStoryGroups]);
 
 
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-2 sm:p-4 lg:p-8 mb-2">
       {/* Story Content Area */}
@@ -263,6 +271,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
             />
           )}
         </div>
+        
 
         {/* Caption */}
         {currentStory.caption && (
@@ -300,6 +309,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
 // --- StoryFeed Component (main component for this file) ---
 export default function StoryFeed() {
+  console.log('--- StoryFeed Component Rendered ---');
   const [stories, setStories] = useState<Story[]>([]); // Stories from followed users
   const [myStories, setMyStories] = useState<Story[]>([]); // Current user's stories
   const [user, setUser] = useState<User | null>(null);
@@ -311,7 +321,9 @@ export default function StoryFeed() {
   const [initialStoryIndexInGroup, setInitialStoryIndexInGroup] = useState(0); // Index of the story within that group
 
   useEffect(() => {
+    console.log('--- StoryFeed useEffect triggered ---');
     const storedToken = localStorage.getItem('token');
+    console.log('Stored Token:', storedToken ? 'Token found' : 'No token found');
     setToken(storedToken);
 
     if (!storedToken) {
@@ -355,6 +367,11 @@ export default function StoryFeed() {
             Authorization: `Bearer ${storedToken}`,
           },
         });
+        console.log('--- Story Feed API Response ---');
+        console.log('Followed Users Stories:', feedRes.data);
+        feedRes.data.forEach((story: Story) => {
+          console.log("Feed Story URL:", story.mediaUrl);
+        });
         setStories(feedRes.data);
 
         // Fetch current user's own stories
@@ -362,6 +379,10 @@ export default function StoryFeed() {
           headers: {
             Authorization: `Bearer ${storedToken}`,
           },
+        });
+        console.log("Current User's Stories:", myStoriesRes.data);
+        myStoriesRes.data.forEach((story: Story) => {
+          console.log("My Story URL:", story.mediaUrl);
         });
         setMyStories(myStoriesRes.data);
 
@@ -441,6 +462,11 @@ export default function StoryFeed() {
   const myActiveStories = myStories.filter(s => new Date(s.expiresAt) > new Date());
   const hasMyStory = myActiveStories.length > 0;
   const myCurrentStoryThumbnail = hasMyStory ? myActiveStories[0].mediaUrl : user.profilePic;
+
+  console.log("--- DEBUG: My Stories from API ---", myStories);
+console.log("--- DEBUG: My Active Stories ---", myActiveStories);
+console.log("--- DEBUG: My Story Thumbnail ---", myCurrentStoryThumbnail);
+
 
   return (
     <div className="flex gap-4 overflow-x-auto px-6 pb-2 no-scrollbar">

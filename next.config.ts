@@ -1,5 +1,5 @@
 // next.config.js
-/** @type {import('next').NextConfig} */ // Add this JSDoc for better type checking
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   generateRobotsTxt: true,
   async rewrites() {
@@ -10,9 +10,15 @@ const nextConfig = {
       },
     ];
   },
-  images: { // <--- Changed from 'Images' to 'images'
-    domains: ['localhost', 'github.com', 'casaway-backend.onrender.com' , "cdn.pixabay.com"],
-  }
+  images: {
+    domains: [
+      'localhost',
+      'github.com',
+      'casaway-backend.onrender.com',
+      'cdn.pixabay.com',
+      'casaway.s3.us-east-1.amazonaws.com' // ✅ Added S3 bucket domain
+    ],
+  },
 };
 
 module.exports = nextConfig;

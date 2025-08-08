@@ -16,7 +16,7 @@ export default function LegalAgreementPage() {
                         <Image width={32} height={32} src="/logo.png" alt="Logo" />
                         <span className="text-forest font-bold text-lg">Casaway</span>
                       </div>
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-2xl max-md:mt-8">
         <OnboardingProgress currentStep={1} totalSteps={4} />
         <div className="mt-8 bg-white p-8 rounded-lg shadow-lg">
           <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">Legal Agreement</h1>

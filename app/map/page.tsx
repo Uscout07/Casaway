@@ -85,7 +85,7 @@ export default function SocialProofMapPage() {
 
   return (
     <div className="min-h-screen bg-ambient flex flex-col items-center justify-center px-6 py-8">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl max-md:mt-8">
         <OnboardingProgress currentStep={4} totalSteps={4} />
          <div className="flex items-center space-x-2 absolute top-5 left-5">
                                 <Image width={32} height={32} src="/logo.png" alt="Logo" />

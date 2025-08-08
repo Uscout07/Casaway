@@ -156,8 +156,13 @@ const AuthForm = () => {
       <Suspense fallback={null}>
         <ReferralHandler setRefCode={setRefCode} setInviteeName={setInviteeName} />
       </Suspense>
-      <div className="w-full max-w-md">
-        <Logo/>
+       
+      <div className="w-full max-w-md max-md:mt-8">
+        <div className="flex items-center space-x-2 absolute top-5 left-5">
+                              <Image width={32} height={32} src="/logo.png" alt="Logo" />
+                              <span className="text-forest font-bold text-lg">Casaway</span>
+                            </div>
+            <div className="w-full max-w-2xl"></div>
         <OnboardingProgress currentStep={2} totalSteps={4} />
 
         <div className="text-center mb-8">

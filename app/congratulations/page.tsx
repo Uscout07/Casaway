@@ -13,7 +13,7 @@ export default function CongratulationsPage() {
                         <Image width={32} height={32} src="/logo.png" alt="Logo" />
                         <span className="text-forest font-bold text-lg">Casaway</span>
                       </div>
-      <div className="text-center bg-white p-10 rounded-lg shadow-lg">
+      <div className="text-center bg-white p-10 rounded-lg shadow-lg max-md:mt-8">
         <div className='w-full flex items-center justify-center'><Image width={70} height={70} src="/ambientLogo.svg" alt="Logo" className='bg-forest rounded-full p-1 mb-4' /></div>
         <h1 className="text-4xl font-bold text-forest mb-4">You're all set!</h1>
         <p className="text-lg text-gray-700 mb-6">The official app launch is on [Date].</p>
