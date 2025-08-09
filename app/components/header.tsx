@@ -196,7 +196,7 @@ export default function NavBar() {
                     }}
                     className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left md:hidden"
                   >
-                    View your Profile
+                    Admin
                   </button>)}
                 <button
                   onClick={handleLogout}
