@@ -198,6 +198,16 @@ export default function NavBar() {
                   >
                     Admin
                   </button>)}
+                {user?.role === "ambassador" && (
+                  <button
+                    onClick={() => {
+                      if (user?._id) router.push(`/referral`);
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left md:hidden"
+                  >
+                    Refer a Friend
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
