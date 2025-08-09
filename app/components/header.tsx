@@ -189,6 +189,15 @@ export default function NavBar() {
                     View your Profile
                   </button>
                 )}
+                {user?.role === "admin" && (
+                  <button
+                    onClick={() => {
+                      if (user?._id) router.push(`/admin`);
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 w-full text-left md:hidden"
+                  >
+                    View your Profile
+                  </button>)}
                 <button
                   onClick={handleLogout}
                   className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
