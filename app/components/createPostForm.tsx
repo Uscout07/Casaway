@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define a type for images that includes a URL
 interface ImageWithUrl extends File {
@@ -20,6 +21,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   initialCountry = 'India',
   initialCity = 'Asoda Todran',
 }) => {
+  const { token, isAuthenticated } = useAuth();
   const [caption, setCaption] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [countryInput, setCountryInput] = useState(initialCountry);
@@ -42,15 +44,8 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     files.forEach(file => {
       newPreviewUrls.push(URL.createObjectURL(file));
-
-      // --- IMPORTANT: This is where you would upload the file to a cloud service ---
-      // For now, we'll just add a placeholder URL to the file object for demonstration.
-      // In a real application, you would:
-      // 1. Call your image upload API (e.g., fetch('/api/upload-image', { method: 'POST', body: formData }))
-      // 2. Await the response to get the actual cloud URL.
-      // 3. Assign the URL: (file as ImageWithUrl).url = actualCloudUrl;
-      const simulatedUrl = `http://example.com/uploaded/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '-')}`;
-      newSelectedImages.push({ ...file, url: simulatedUrl }); // Attach a dummy URL
+      // Keep the actual File object - the backend will handle the upload
+      newSelectedImages.push(file as ImageWithUrl);
     });
 
     setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
@@ -78,8 +73,7 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
       return;
     }
 
-    const token = localStorage.getItem('token'); // Retrieve token from local storage (or cookie)
-    if (!token) {
+    if (!isAuthenticated || !token) {
         setError('User not logged in. Please log in to create a post.');
         setIsLoading(false);
         return;
@@ -87,27 +81,37 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
     const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(Boolean);
 
-    // Prepare data to send as JSON, including image URLs
-    const postData = {
-      caption: caption,
+    // Prepare FormData for file upload
+    const formData = new FormData();
+    formData.append('caption', caption);
+    formData.append('city', cityInput);
+    formData.append('country', countryInput);
+    formData.append('status', status); // Use the status parameter
+    formData.append('tags', tagsArray.join(','));
+
+    // Add all selected images as files
+    selectedImages.forEach((image, index) => {
+      if (image instanceof File) {
+        formData.append('images', image);
+      }
+    });
+
+    console.log('Sending post data (FormData):', {
+      caption,
       city: cityInput,
       country: countryInput,
       status: status,
       tags: tagsArray,
-      imageUrl: selectedImages[0]?.url || '', // Main image URL
-      images: selectedImages.map(image => image.url).filter(Boolean), // Array of all image URLs
-    };
-
-    console.log('Sending post data (JSON):', postData); // Log the data being sent
+      imageCount: selectedImages.length
+    });
 
     try {
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Explicitly set Content-Type for JSON
-          'Authorization': `Bearer ${token}`, // <-- ADDED: Send the JWT token
+          'Authorization': `Bearer ${token}`, // Don't set Content-Type for FormData
         },
-        body: JSON.stringify(postData), // Send JSON string
+        body: formData, // Send FormData instead of JSON
       });
 
       if (!response.ok) {

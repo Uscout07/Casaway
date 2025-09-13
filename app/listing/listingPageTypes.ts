@@ -4,6 +4,8 @@ export interface User {
     name: string;
     username: string;
     profilePic?: string;
+    city?: string;
+    country?: string;
 }
 
 export interface Listing {
@@ -27,6 +29,11 @@ export interface Listing {
     updatedAt: string;
     likesCount: number;
     commentsCount: number;
+    wifiSpeed?: {
+        download: number;
+        upload: number;
+        verified?: boolean;
+    };
 }
 
 export interface Comment {

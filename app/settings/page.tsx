@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
+import PostModal from '../components/postModal';
 import ConfirmDialog from '../components/confirmDialog'; // Assuming this path is correct
 import UserListingsSection from '../components/UserListingsSection';
 import EditListingForm from './editListingForm'; // Import the new form component
@@ -53,11 +54,58 @@ const SettingsPage = () => {
   // Profile edit states
   const [profileData, setProfileData] = useState({
     name: '',
+    username: '',
     phone: '',
+    city: '',
+    country: '',
     profilePic: ''
   });
 
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; profilePic?: string; general?: string }>({});
+  // Password change states
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Email code password reset states
+  const [codeData, setCodeData] = useState({
+    verificationCode: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const [passwordMethod, setPasswordMethod] = useState<'current' | 'email'>('current');
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeLoading, setCodeLoading] = useState(false);
+
+  const [errors, setErrors] = useState<{ name?: string; username?: string; phone?: string; city?: string; country?: string; profilePic?: string; general?: string }>({});
+  const [passwordErrors, setPasswordErrors] = useState<{ currentPassword?: string; newPassword?: string; confirmPassword?: string; general?: string }>({});
+  const [codeErrors, setCodeErrors] = useState<{ verificationCode?: string; newPassword?: string; confirmPassword?: string; general?: string }>({});
+  
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showCodeNewPassword, setShowCodeNewPassword] = useState(false);
+  const [showCodeConfirmPassword, setShowCodeConfirmPassword] = useState(false);
+
+  // Activity states
+  const [likedPosts, setLikedPosts] = useState<any[]>([]);
+  const [userComments, setUserComments] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
+  
+  // Pagination states
+  const [likesPage, setLikesPage] = useState(1);
+  const [commentsPage, setCommentsPage] = useState(1);
+  const [totalLikes, setTotalLikes] = useState(0);
+  const [totalComments, setTotalComments] = useState(0);
+  const itemsPerPage = 5;
+
+  // Post modal states
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     fetchUserData();
@@ -69,6 +117,9 @@ const SettingsPage = () => {
     }
     if (user?._id && activeTab === 'posts') {
       fetchPosts();
+    }
+    if (user?._id && activeTab === 'activity') {
+      fetchActivityData();
     }
   }, [activeTab, user?._id, editingListingId]); // Re-fetch when activeTab or userId changes, or editing state changes
 
@@ -82,7 +133,7 @@ const SettingsPage = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+      const response = await fetch(`/api/users/me`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -94,7 +145,10 @@ const SettingsPage = () => {
         setUser(userData);
         setProfileData({
           name: userData.name || '',
+          username: (userData as any).username || '',
           phone: userData.phone || '',
+          city: (userData as any).city || '',
+          country: (userData as any).country || '',
           profilePic: userData.profilePic || ''
         });
 
@@ -179,6 +233,141 @@ const SettingsPage = () => {
     }
   };
 
+  const fetchActivityData = async () => {
+    if (!user?._id) return;
+    setActivityLoading(true);
+    setActivityError(null);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      // Fetch liked posts
+      const likedPostsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/likes/user/${user._id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      // Fetch user comments
+      const commentsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/comments/user/${user._id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+
+      if (likedPostsResponse.ok) {
+        const likedData = await likedPostsResponse.json();
+        // Filter to only show likes on user's own posts/listings
+        const filteredLikes = likedData.filter((like: any) => {
+          if (like.post && like.post.user) {
+            if (like.post.user._id === user._id || like.post.user._id.toString() === user._id.toString()) {
+              return true;
+            }
+          }
+          if (like.listing && like.listing.user) {
+            if (like.listing.user._id === user._id || like.listing.user._id.toString() === user._id.toString()) {
+              return true;
+            }
+          }
+          return false;
+        });
+        setLikedPosts(filteredLikes.slice(0, itemsPerPage)); // Show first 5 items
+        setTotalLikes(filteredLikes.length);
+      } else {
+        console.error('Failed to fetch liked posts:', likedPostsResponse.statusText);
+      }
+
+      if (commentsResponse.ok) {
+        const commentsData = await commentsResponse.json();
+        // Filter to only show comments on user's own posts/listings
+        const filteredComments = commentsData.filter((comment: any) => {
+          if (comment.post && comment.post.user) {
+            if (comment.post.user._id === user._id || comment.post.user._id.toString() === user._id.toString()) {
+              return true;
+            }
+          }
+          if (comment.listing && comment.listing.user) {
+            if (comment.listing.user._id === user._id || comment.listing.user._id.toString() === user._id.toString()) {
+              return true;
+            }
+          }
+          return false;
+        });
+        setUserComments(filteredComments.slice(0, itemsPerPage)); // Show first 5 items
+        setTotalComments(filteredComments.length);
+      } else {
+        console.error('Failed to fetch comments:', commentsResponse.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching activity data:', error);
+      setActivityError('Failed to load activity data');
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  // Fetch more likes for pagination
+  const fetchMoreLikes = async (page: number) => {
+    if (!user?._id) return;
+    setActivityLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const likedPostsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/likes/user/${user._id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (likedPostsResponse.ok) {
+        const likedData = await likedPostsResponse.json();
+        // Filter to only show likes on user's own posts/listings
+        const filteredLikes = likedData.filter((like: any) => {
+          if (like.post && like.post.user && like.post.user._id === user._id) return true;
+          if (like.listing && like.listing.user && like.listing.user._id === user._id) return true;
+          return false;
+        });
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        setLikedPosts(filteredLikes.slice(startIndex, endIndex));
+        setLikesPage(page);
+      }
+    } catch (error) {
+      console.error('Error fetching more likes:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  // Fetch more comments for pagination
+  const fetchMoreComments = async (page: number) => {
+    if (!user?._id) return;
+    setActivityLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const commentsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/comments/user/${user._id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (commentsResponse.ok) {
+        const commentsData = await commentsResponse.json();
+        // Filter to only show comments on user's own posts/listings
+        const filteredComments = commentsData.filter((comment: any) => {
+          if (comment.post && comment.post.user && comment.post.user._id === user._id) return true;
+          if (comment.listing && comment.listing.user && comment.listing.user._id === user._id) return true;
+          return false;
+        });
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        setUserComments(filteredComments.slice(startIndex, endIndex));
+        setCommentsPage(page);
+      }
+    } catch (error) {
+      console.error('Error fetching more comments:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  // Handle post click to open modal
+  const handlePostClick = (post: any) => {
+    setSelectedPost(post);
+    setModalOpen(true);
+  };
+
   const deletePost = async (postId?: string) => {
     if (!postId) return;
     setShowDeleteConfirm(null); // Close confirmation dialog
@@ -234,8 +423,252 @@ const SettingsPage = () => {
     }
   };
 
+  const unlikePost = async (likeId: string) => {
+    setActivityLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/likes/${likeId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        alert('Post unliked successfully!');
+        fetchActivityData(); // Refresh activity data
+      } else {
+        const errorData = await response.json();
+        alert(errorData.msg || 'Failed to unlike post.');
+        console.error('Failed to unlike post:', errorData);
+      }
+    } catch (error) {
+      alert('Error unliking post.');
+      console.error('Error unliking post:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    setActivityLoading(true);
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        alert('Comment deleted successfully!');
+        fetchActivityData(); // Refresh activity data
+      } else {
+        const errorData = await response.json();
+        alert(errorData.msg || 'Failed to delete comment.');
+        console.error('Failed to delete comment:', errorData);
+      }
+    } catch (error) {
+      alert('Error deleting comment.');
+      console.error('Error deleting comment:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+  };
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCodeData({ ...codeData, [e.target.name]: e.target.value });
+  };
+
+  const sendVerificationCode = async () => {
+    setCodeLoading(true);
+    setCodeErrors({});
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        setCodeErrors({ general: 'Authentication token not found. Please log in again.' });
+        setCodeLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/request-password-change`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCodeSent(true);
+        alert('Verification code sent to your email!');
+      } else {
+        setCodeErrors({ general: data.msg || 'Failed to send verification code.' });
+      }
+    } catch (error) {
+      setCodeErrors({ general: 'Network error or unexpected issue.' });
+      console.error('Error sending verification code:', error);
+    } finally {
+      setCodeLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setPasswordErrors({});
+
+    // Validation
+    if (!passwordData.currentPassword) {
+      setPasswordErrors({ currentPassword: 'Current password is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (!passwordData.newPassword) {
+      setPasswordErrors({ newPassword: 'New password is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordErrors({ newPassword: 'New password must be at least 6 characters' });
+      setLoading(false);
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordErrors({ confirmPassword: 'Passwords do not match' });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        setPasswordErrors({ general: 'Authentication token not found. Please log in again.' });
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/change-password`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        alert('Password changed successfully!');
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        const errorData = await response.json();
+        setPasswordErrors({ general: errorData.msg || 'Failed to change password.' });
+      }
+    } catch (error) {
+      setPasswordErrors({ general: 'Network error or unexpected issue.' });
+      console.error('Error changing password:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setCodeErrors({});
+
+    // Validation
+    if (!codeData.verificationCode) {
+      setCodeErrors({ verificationCode: 'Verification code is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (!codeData.newPassword) {
+      setCodeErrors({ newPassword: 'New password is required' });
+      setLoading(false);
+      return;
+    }
+
+    if (codeData.newPassword.length < 6) {
+      setCodeErrors({ newPassword: 'New password must be at least 6 characters' });
+      setLoading(false);
+      return;
+    }
+
+    if (codeData.newPassword !== codeData.confirmPassword) {
+      setCodeErrors({ confirmPassword: 'Passwords do not match' });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        setCodeErrors({ general: 'Authentication token not found. Please log in again.' });
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/reset-password`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          verificationCode: codeData.verificationCode,
+          newPassword: codeData.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Password changed successfully!');
+        setCodeData({
+          verificationCode: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setCodeSent(false);
+        setPasswordMethod('current');
+      } else {
+        setCodeErrors({ general: data.msg || 'Failed to change password.' });
+      }
+    } catch (error) {
+      setCodeErrors({ general: 'Network error or unexpected issue.' });
+      console.error('Error changing password:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const onProfileFileSelected = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const file = fileList[0];
+    setProfilePicFile(file);
+    setProfileData(prev => ({ ...prev, profilePic: '' }));
   };
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
@@ -255,13 +688,22 @@ const SettingsPage = () => {
       // --- FIX APPLIED HERE ---
       // Changed the URL from '/api/users/me' to '/api/users/edit'
       // Changed the method from 'PUT' to 'PATCH'
+      const form = new FormData();
+      form.append('name', profileData.name);
+      form.append('username', profileData.username);
+      form.append('phone', profileData.phone);
+      form.append('city', profileData.city);
+      form.append('country', profileData.country);
+      if (profilePicFile) {
+        form.append('profilePic', profilePicFile);
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/edit`, {
-        method: 'PATCH', // Use PATCH for partial updates to the authenticated user's profile
+        method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(profileData) // profileData should contain the fields you want to update
+        body: form
       });
       // --- END FIX ---
 
@@ -286,7 +728,7 @@ const SettingsPage = () => {
   // Callback from UserListingsSection to initiate edit
   const handleEditListing = (id: string) => {
     setEditingListingId(id);
-    // No need to change tab here, as the form will replace the listings list.
+    setActiveTab('listings');
   };
 
   // Callbacks for EditListingForm
@@ -308,9 +750,10 @@ const SettingsPage = () => {
 
   const tabItems = [
     { id: 'profile', icon: 'mdi:account-outline', label: 'Profile' },
+    { id: 'listings', icon: 'mdi:home-city-outline', label: 'My Listings' },
     { id: 'posts', icon: 'mdi:post-outline', label: 'My Posts' },
-    { id: 'security', icon: 'mdi:security', label: 'Security' },
-    { id: 'notifications', icon: 'mdi:bell-outline', label: 'Notifications' }
+    { id: 'activity', icon: 'mdi:heart-outline', label: 'Activity' },
+    { id: 'security', icon: 'mdi:security', label: 'Security' }
   ];
 
   return (
@@ -379,63 +822,235 @@ const SettingsPage = () => {
 
               {/* Profile Tab */}
               {activeTab === 'profile' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4 sm:mb-6">Profile Settings</h2>
-                  <form onSubmit={handleProfileSubmit} className="space-y-4 sm:space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                      <div className="sm:col-span-2">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input
-                          type="text"
-                          id="name"
-                          name="name"
-                          value={profileData.name}
-                          onChange={handleProfileChange}
-                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                        />
-                        {errors.name && <p className="text-coral text-xs mt-1">{errors.name}</p>}
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                        <input
-                          type="text"
-                          id="phone"
-                          name="phone"
-                          value={profileData.phone}
-                          onChange={handleProfileChange}
-                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                        />
-                        {errors.phone && <p className="text-coral text-xs mt-1">{errors.phone}</p>}
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label htmlFor="profilePic" className="block text-sm font-medium text-gray-700 mb-1">Profile Picture URL</label>
-                        <input
-                          type="text"
-                          id="profilePic"
-                          name="profilePic"
-                          value={profileData.profilePic}
-                          onChange={handleProfileChange}
-                          className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                        />
-                        {errors.profilePic && <p className="text-coral text-xs mt-1">{errors.profilePic}</p>}
-                        {profileData.profilePic && (
-                          <div className="mt-4 flex justify-center sm:justify-start">
-                            <img src={profileData.profilePic} alt="Profile Preview" className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover" />
+                <div className="space-y-8">
+                  <div className="text-center lg:text-left">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-forest mb-2">Profile Settings</h2>
+                    <p className="text-forest/70">Manage your personal information and preferences</p>
+                  </div>
+
+                  <div className="bg-white rounded-2xl shadow-lg border border-ambient/20 overflow-hidden">
+                    <form onSubmit={handleProfileSubmit} className="p-6 sm:p-8 lg:p-10">
+                      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
+
+                        {/* Avatar Section */}
+                        <div className="lg:col-span-2">
+                          <div className="flex flex-col items-center space-y-6">
+                            <div className="relative group">
+                              <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white shadow-xl ring-4 ring-forest/10 bg-gray-100 flex items-center justify-center">
+                                {profilePicFile ? (
+                                  <img
+                                    src={URL.createObjectURL(profilePicFile)}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                  />
+                                ) : profileData.profilePic ? (
+                                  <img
+                                    src={profileData.profilePic}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <Icon icon="mdi:account-circle" className="w-16 h-16 sm:w-20 sm:h-20 text-gray-400" />
+                                )}
+                              </div>
+                              <div className="absolute -bottom-2 -right-2 bg-forest p-2 rounded-full shadow-lg">
+                                <Icon icon="mdi:camera" className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+
+                            {/* Upload Area */}
+                            <div
+                              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                              onDragLeave={() => setIsDragging(false)}
+                              onDrop={(e) => { e.preventDefault(); setIsDragging(false); onProfileFileSelected(e.dataTransfer.files); }}
+                              className={`w-full max-w-sm rounded-2xl p-6 text-center transition-all duration-300 border-2 border-dashed ${isDragging
+                                  ? 'bg-forest/5 border-forest shadow-lg scale-105'
+                                  : 'bg-white border-ambient/40 hover:border-forest/30 hover:bg-forest/[0.02]'
+                                }`}
+                            >
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="w-12 h-12 bg-forest/10 rounded-full flex items-center justify-center">
+                                  <Icon icon="mdi:cloud-upload" className="w-6 h-6 text-forest" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-forest mb-1">Drop your image here</div>
+                                  <div className="text-xs text-forest/60 mb-3">PNG, JPG up to 5MB</div>
+                                </div>
+                                <label className="inline-block group cursor-pointer">
+                                  <span className="px-4 py-2 rounded-xl bg-forest text-white text-sm font-medium hover:bg-pine transition-all duration-300 shadow-md hover:shadow-lg group-hover:-translate-y-0.5">
+                                    Browse Files
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => onProfileFileSelected(e.target.files)}
+                                    className="hidden"
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {(profilePicFile || profileData.profilePic) && (
+                              <button
+                                type="button"
+                                onClick={() => { setProfilePicFile(null); setProfileData(prev => ({ ...prev, profilePic: '' })); }}
+                                className="flex items-center gap-2 text-sm text-coral hover:text-coral/80 transition-colors font-medium"
+                              >
+                                <Icon icon="mdi:delete-outline" className="w-4 h-4" />
+                                Remove photo
+                              </button>
+                            )}
+                            {errors.profilePic && (
+                              <div className="bg-coral/10 border border-coral/20 rounded-lg p-3 w-full">
+                                <p className="text-coral text-sm font-medium">{errors.profilePic}</p>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+
+                        {/* Form Fields */}
+                        <div className="lg:col-span-3 space-y-6">
+                          <div className="grid grid-cols-1 gap-6">
+
+                            {/* Name */}
+                            <div className="space-y-2">
+                              <label htmlFor="name" className="block text-sm font-semibold text-forest">
+                                Full Name
+                              </label>
+                              <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={profileData.name}
+                                onChange={handleProfileChange}
+                                placeholder="Enter your full name"
+                                className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                              />
+                              {errors.name && (
+                                <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                  <p className="text-coral text-sm font-medium">{errors.name}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Username */}
+                            <div className="space-y-2">
+                              <label htmlFor="username" className="block text-sm font-semibold text-forest">
+                                Username
+                              </label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-forest/60 font-medium">@</span>
+                                <input
+                                  type="text"
+                                  id="username"
+                                  name="username"
+                                  value={profileData.username}
+                                  onChange={handleProfileChange}
+                                  placeholder="username"
+                                  className="w-full border-2 border-ambient/30 rounded-xl py-3 pl-8 pr-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                                />
+                              </div>
+                              {errors.username && (
+                                <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                  <p className="text-coral text-sm font-medium">{errors.username}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Phone */}
+                            <div className="space-y-2">
+                              <label htmlFor="phone" className="block text-sm font-semibold text-forest">
+                                Phone Number
+                              </label>
+                              <input
+                                type="text"
+                                id="phone"
+                                name="phone"
+                                value={profileData.phone}
+                                onChange={handleProfileChange}
+                                placeholder="+1 (555) 123-4567"
+                                className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                              />
+                              {errors.phone && (
+                                <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                  <p className="text-coral text-sm font-medium">{errors.phone}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <label htmlFor="city" className="block text-sm font-semibold text-forest">
+                                  City
+                                </label>
+                                <input
+                                  type="text"
+                                  id="city"
+                                  name="city"
+                                  value={profileData.city}
+                                  onChange={handleProfileChange}
+                                  placeholder="New York"
+                                  className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                                />
+                                {errors.city && (
+                                  <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                    <p className="text-coral text-sm font-medium">{errors.city}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <label htmlFor="country" className="block text-sm font-semibold text-forest">
+                                  Country
+                                </label>
+                                <input
+                                  type="text"
+                                  id="country"
+                                  name="country"
+                                  value={profileData.country}
+                                  onChange={handleProfileChange}
+                                  placeholder="United States"
+                                  className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                                />
+                                {errors.country && (
+                                  <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                    <p className="text-coral text-sm font-medium">{errors.country}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    {errors.general && <p className="text-coral text-sm mt-2">{errors.general}</p>}
-                    <div className="flex justify-center sm:justify-start">
-                      <button
-                        type="submit"
-                        className="w-full sm:w-auto bg-forest-medium hover:forest text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200"
-                        disabled={loading}
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  </form>
+
+                      {/* General Error */}
+                      {errors.general && (
+                        <div className="mt-8 bg-coral/10 border-l-4 border-coral rounded-r-lg p-4">
+                          <div className="flex items-center">
+                            <Icon icon="mdi:alert-circle" className="w-5 h-5 text-coral mr-3" />
+                            <p className="text-coral font-medium">{errors.general}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Submit Button */}
+                      <div className="mt-10 flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="relative px-8 py-3 bg-forest text-white font-semibold rounded-xl shadow-lg hover:bg-pine transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                          <div className="flex items-center gap-2">
+                            {loading && (
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            )}
+                            {loading ? 'Saving Changes...' : 'Save Changes'}
+                          </div>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               )}
 
@@ -541,8 +1156,367 @@ const SettingsPage = () => {
 
               {/* Security Tab */}
               {activeTab === 'security' && (
-                <div className="space-y-6">
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4 sm:mb-6">Security Settings</h2>
+                <div className="space-y-8">
+                  <div className="text-center lg:text-left">
+                    <h2 className="text-3xl sm:text-4xl font-bold text-forest mb-2">Security Settings</h2>
+                    <p className="text-forest/70">Manage your account security and password</p>
+                  </div>
+
+                  {/* Password Change Method Selection */}
+                  <div className="bg-white rounded-2xl shadow-lg border border-ambient/20 overflow-hidden">
+                    <div className="p-6 sm:p-8 lg:p-10">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-forest/10 rounded-full flex items-center justify-center">
+                          <Icon icon="mdi:lock-outline" className="w-5 h-5 text-forest" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-semibold text-forest">Change Password</h3>
+                          <p className="text-forest/60 text-sm">Choose how you want to change your password</p>
+                        </div>
+                      </div>
+
+                      {/* Method Selection */}
+                      <div className="flex gap-4 mb-6">
+                        <button
+                          type="button"
+                          onClick={() => setPasswordMethod('current')}
+                          className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                            passwordMethod === 'current'
+                              ? 'border-forest bg-forest/5 text-forest'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-forest/30'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon icon="mdi:key" className="w-5 h-5" />
+                            <div className="text-left">
+                              <div className="font-semibold">Current Password</div>
+                              <div className="text-sm opacity-75">Enter your current password</div>
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPasswordMethod('email')}
+                          className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                            passwordMethod === 'email'
+                              ? 'border-forest bg-forest/5 text-forest'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-forest/30'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon icon="mdi:email" className="w-5 h-5" />
+                            <div className="text-left">
+                              <div className="font-semibold">Email Code</div>
+                              <div className="text-sm opacity-75">Get code via email</div>
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Current Password Method */}
+                      {passwordMethod === 'current' && (
+                        <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 gap-6">
+                          {/* Current Password */}
+                          <div className="space-y-2">
+                            <label htmlFor="currentPassword" className="block text-sm font-semibold text-forest">
+                              Current Password
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showCurrentPassword ? "text" : "password"}
+                                id="currentPassword"
+                                name="currentPassword"
+                                value={passwordData.currentPassword}
+                                onChange={handlePasswordChange}
+                                placeholder="Enter your current password"
+                                className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/60 hover:text-forest transition-colors"
+                              >
+                                <Icon 
+                                  icon={showCurrentPassword ? "mdi:eye-off" : "mdi:eye"} 
+                                  className="w-5 h-5" 
+                                />
+                              </button>
+                            </div>
+                            {passwordErrors.currentPassword && (
+                              <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                <p className="text-coral text-sm font-medium">{passwordErrors.currentPassword}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* New Password */}
+                          <div className="space-y-2">
+                            <label htmlFor="newPassword" className="block text-sm font-semibold text-forest">
+                              New Password
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showNewPassword ? "text" : "password"}
+                                id="newPassword"
+                                name="newPassword"
+                                value={passwordData.newPassword}
+                                onChange={handlePasswordChange}
+                                placeholder="Enter your new password"
+                                className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/60 hover:text-forest transition-colors"
+                              >
+                                <Icon 
+                                  icon={showNewPassword ? "mdi:eye-off" : "mdi:eye"} 
+                                  className="w-5 h-5" 
+                                />
+                              </button>
+                            </div>
+                            {passwordErrors.newPassword && (
+                              <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                <p className="text-coral text-sm font-medium">{passwordErrors.newPassword}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Confirm Password */}
+                          <div className="space-y-2">
+                            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-forest">
+                              Confirm New Password
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                value={passwordData.confirmPassword}
+                                onChange={handlePasswordChange}
+                                placeholder="Confirm your new password"
+                                className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/60 hover:text-forest transition-colors"
+                              >
+                                <Icon 
+                                  icon={showConfirmPassword ? "mdi:eye-off" : "mdi:eye"} 
+                                  className="w-5 h-5" 
+                                />
+                              </button>
+                            </div>
+                            {passwordErrors.confirmPassword && (
+                              <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                <p className="text-coral text-sm font-medium">{passwordErrors.confirmPassword}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* General Password Error */}
+                        {passwordErrors.general && (
+                          <div className="bg-coral/10 border-l-4 border-coral rounded-r-lg p-4">
+                            <div className="flex items-center">
+                              <Icon icon="mdi:alert-circle" className="w-5 h-5 text-coral mr-3" />
+                              <p className="text-coral font-medium">{passwordErrors.general}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Submit Button */}
+                        <div className="flex justify-end">
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="relative px-8 py-3 bg-forest text-white font-semibold rounded-xl shadow-lg hover:bg-pine transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              {loading && (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              )}
+                              {loading ? 'Changing Password...' : 'Change Password'}
+                            </div>
+                          </button>
+                        </div>
+                      </form>
+                      )}
+
+                      {/* Email Code Method */}
+                      {passwordMethod === 'email' && (
+                        <div className="space-y-6">
+                          {!codeSent ? (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Icon icon="mdi:email-outline" className="w-8 h-8 text-forest" />
+                              </div>
+                              <h4 className="text-lg font-semibold text-forest mb-2">Send Verification Code</h4>
+                              <p className="text-gray-600 mb-6">
+                                We'll send a 6-digit verification code to your email address. The code will be valid for 15 minutes.
+                              </p>
+                              <button
+                                onClick={sendVerificationCode}
+                                disabled={codeLoading}
+                                className="px-6 py-3 bg-forest text-white font-semibold rounded-xl hover:bg-pine transition-colors disabled:opacity-50"
+                              >
+                                {codeLoading ? 'Sending...' : 'Send Code to Email'}
+                              </button>
+                              {codeErrors.general && (
+                                <div className="mt-4 bg-coral/10 border border-coral/20 rounded-lg p-3">
+                                  <p className="text-coral text-sm font-medium">{codeErrors.general}</p>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <form onSubmit={handleCodeSubmit} className="space-y-6">
+                              <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <Icon icon="mdi:check-circle" className="w-8 h-8 text-green-600" />
+                                </div>
+                                <h4 className="text-lg font-semibold text-forest mb-2">Code Sent!</h4>
+                                <p className="text-gray-600">
+                                  Check your email for the 6-digit verification code.
+                                </p>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-6">
+                                {/* Verification Code */}
+                                <div className="space-y-2">
+                                  <label htmlFor="verificationCode" className="block text-sm font-semibold text-forest">
+                                    Verification Code
+                                  </label>
+                                  <input
+                                    type="text"
+                                    id="verificationCode"
+                                    name="verificationCode"
+                                    value={codeData.verificationCode}
+                                    onChange={handleCodeChange}
+                                    placeholder="Enter 6-digit code"
+                                    maxLength={6}
+                                    className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40 text-center text-2xl tracking-widest"
+                                  />
+                                  {codeErrors.verificationCode && (
+                                    <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                      <p className="text-coral text-sm font-medium">{codeErrors.verificationCode}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* New Password */}
+                                <div className="space-y-2">
+                                  <label htmlFor="newPasswordCode" className="block text-sm font-semibold text-forest">
+                                    New Password
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type={showCodeNewPassword ? "text" : "password"}
+                                      id="newPasswordCode"
+                                      name="newPassword"
+                                      value={codeData.newPassword}
+                                      onChange={handleCodeChange}
+                                      placeholder="Enter your new password"
+                                      className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowCodeNewPassword(!showCodeNewPassword)}
+                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/60 hover:text-forest transition-colors"
+                                    >
+                                      <Icon 
+                                        icon={showCodeNewPassword ? "mdi:eye-off" : "mdi:eye"} 
+                                        className="w-5 h-5" 
+                                      />
+                                    </button>
+                                  </div>
+                                  {codeErrors.newPassword && (
+                                    <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                      <p className="text-coral text-sm font-medium">{codeErrors.newPassword}</p>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Confirm Password */}
+                                <div className="space-y-2">
+                                  <label htmlFor="confirmPasswordCode" className="block text-sm font-semibold text-forest">
+                                    Confirm New Password
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type={showCodeConfirmPassword ? "text" : "password"}
+                                      id="confirmPasswordCode"
+                                      name="confirmPassword"
+                                      value={codeData.confirmPassword}
+                                      onChange={handleCodeChange}
+                                      placeholder="Confirm your new password"
+                                      className="w-full border-2 border-ambient/30 rounded-xl py-3 px-4 pr-12 focus:outline-none focus:border-forest focus:ring-4 focus:ring-forest/10 transition-all duration-300 text-forest placeholder-forest/40"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowCodeConfirmPassword(!showCodeConfirmPassword)}
+                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/60 hover:text-forest transition-colors"
+                                    >
+                                      <Icon 
+                                        icon={showCodeConfirmPassword ? "mdi:eye-off" : "mdi:eye"} 
+                                        className="w-5 h-5" 
+                                      />
+                                    </button>
+                                  </div>
+                                  {codeErrors.confirmPassword && (
+                                    <div className="bg-coral/10 border border-coral/20 rounded-lg p-2">
+                                      <p className="text-coral text-sm font-medium">{codeErrors.confirmPassword}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* General Code Error */}
+                              {codeErrors.general && (
+                                <div className="bg-coral/10 border-l-4 border-coral rounded-r-lg p-4">
+                                  <div className="flex items-center">
+                                    <Icon icon="mdi:alert-circle" className="w-5 h-5 text-coral mr-3" />
+                                    <p className="text-coral font-medium">{codeErrors.general}</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Submit Button */}
+                              <div className="flex justify-end gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCodeSent(false);
+                                    setCodeData({ verificationCode: '', newPassword: '', confirmPassword: '' });
+                                    setCodeErrors({});
+                                  }}
+                                  className="px-6 py-3 border-2 border-gray-300 text-gray-600 font-semibold rounded-xl hover:border-gray-400 transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  disabled={loading}
+                                  className="relative px-8 py-3 bg-forest text-white font-semibold rounded-xl shadow-lg hover:bg-pine transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {loading && (
+                                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    )}
+                                    {loading ? 'Changing Password...' : 'Change Password'}
+                                  </div>
+                                </button>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Danger Zone */}
                   <div className="bg-red-50 border-l-4 border-red-400 p-4 sm:p-6 rounded-md">
                     <div className="flex items-start sm:items-center">
                       <Icon icon="mdi:warning" className="w-6 h-6 text-coral/90 mr-3 flex-shrink-0 mt-1 sm:mt-0" />
@@ -563,27 +1537,228 @@ const SettingsPage = () => {
                 </div>
               )}
 
-              {/* Notifications Tab */}
-              {activeTab === 'notifications' && (
+              {/* Activity Tab */}
+              {activeTab === 'activity' && (
                 <div className="space-y-6">
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4">Notification Settings</h2>
-                  <p className="text-gray-600 mb-6">Manage your notification preferences here.</p>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <span className="text-gray-700 font-medium">Email notifications</span>
-                      <label htmlFor="email-toggle" className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="email-toggle" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
-                      </label>
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-forest mb-4 sm:mb-6">Activity</h2>
+                  
+                  {activityLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <div className="w-8 h-8 border-4 border-forest/30 border-t-forest rounded-full animate-spin"></div>
+                      <span className="ml-3 text-forest">Loading activity...</span>
                     </div>
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <span className="text-gray-700 font-medium">SMS notifications</span>
-                      <label htmlFor="sms-toggle" className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="sms-toggle" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-forest-medium"></div>
-                      </label>
+                  ) : activityError ? (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <Icon icon="mdi:alert-circle" className="w-5 h-5 text-red-600 mr-3" />
+                        <p className="text-red-600">{activityError}</p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-8">
+                      {/* Liked Posts Section */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center mb-4">
+                          <Icon icon="mdi:heart" className="w-6 h-6 text-red-500 mr-3" />
+                          <h3 className="text-xl font-semibold text-forest">Likes on My Content</h3>
+                          <span className="ml-2 bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                            {likedPosts.length}
+                          </span>
+                        </div>
+                        
+                        {likedPosts.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Icon icon="mdi:heart-outline" className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-600">No one has liked your posts or listings yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {likedPosts.map((like) => (
+                              <div key={like._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center mb-2">
+                                      <img
+                                        src={
+                                          like.post?.imageUrl || 
+                                          (like.listing?.images && like.listing.images[0]) || 
+                                          '/placeholder-image.jpg'
+                                        }
+                                        alt={like.post ? "Post" : "Listing"}
+                                        className="w-16 h-16 object-cover rounded-lg mr-4"
+                                      />
+                                      <div>
+                                        <h4 className="font-medium text-forest">
+                                          {like.post?.caption || like.listing?.title || 'Item'}
+                                        </h4>
+                                        <p className="text-sm text-gray-600">
+                                          Liked on {new Date(like.createdAt).toLocaleDateString()}
+                                        </p>
+                                        {(like.post?.user || like.listing?.user) && (
+                                          <p className="text-sm text-gray-500">
+                                            by {(like.post?.user || like.listing?.user)?.name || (like.post?.user || like.listing?.user)?.username}
+                                          </p>
+                                        )}
+                                        <div className="flex items-center gap-2 mt-2">
+                                          <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                            {like.post ? 'Post' : like.listing ? 'Listing' : 'Comment'}
+                                          </span>
+                                          {like.post && (
+                                            <button
+                                              onClick={() => handlePostClick(like.post)}
+                                              className="text-xs text-forest hover:text-forest/80 underline"
+                                            >
+                                              View Post
+                                            </button>
+                                          )}
+                                          {like.listing && (
+                                            <button
+                                              onClick={() => window.open(`/listing/${like.listing._id}`, '_blank')}
+                                              className="text-xs text-forest hover:text-forest/80 underline"
+                                            >
+                                              View Listing
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => unlikePost(like._id)}
+                                    disabled={activityLoading}
+                                    className="ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Unlike item"
+                                  >
+                                    <Icon icon="mdi:heart" className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Pagination for Liked Posts */}
+                        {totalLikes > itemsPerPage && (
+                          <div className="mt-6 flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Showing {((likesPage - 1) * itemsPerPage) + 1} to {Math.min(likesPage * itemsPerPage, totalLikes)} of {totalLikes} likes
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => fetchMoreLikes(likesPage - 1)}
+                                disabled={likesPage === 1 || activityLoading}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Previous
+                              </button>
+                              <span className="px-3 py-1 text-sm bg-forest text-white rounded-md">
+                                {likesPage}
+                              </span>
+                              <button
+                                onClick={() => fetchMoreLikes(likesPage + 1)}
+                                disabled={likesPage * itemsPerPage >= totalLikes || activityLoading}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Comments Section */}
+                      <div className="bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="flex items-center mb-4">
+                          <Icon icon="mdi:comment" className="w-6 h-6 text-blue-500 mr-3" />
+                          <h3 className="text-xl font-semibold text-forest">Comments on My Content</h3>
+                          <span className="ml-2 bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                            {userComments.length}
+                          </span>
+                        </div>
+                        
+                        {userComments.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Icon icon="mdi:comment-outline" className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-600">You haven't commented on your own posts or listings yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {userComments.map((comment) => (
+                              <div key={comment._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <p className="text-gray-800 mb-2">{comment.text}</p>
+                                    <div className="text-sm text-gray-600">
+                                      <p>Posted on {new Date(comment.createdAt).toLocaleDateString()}</p>
+                                      {comment.post && (
+                                        <div className="flex items-center gap-2">
+                                          <p>on post: {comment.post.caption || 'Post'}</p>
+                                          <button
+                                            onClick={() => handlePostClick(comment.post)}
+                                            className="text-xs text-forest hover:text-forest/80 underline"
+                                          >
+                                            View Post
+                                          </button>
+                                        </div>
+                                      )}
+                                      {comment.listing && (
+                                        <div className="flex items-center gap-2">
+                                          <p>on listing: {comment.listing.title || 'Listing'}</p>
+                                          <button
+                                            onClick={() => window.open(`/listing/${comment.listing._id}`, '_blank')}
+                                            className="text-xs text-forest hover:text-forest/80 underline"
+                                          >
+                                            View Listing
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => deleteComment(comment._id)}
+                                    disabled={activityLoading}
+                                    className="ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Delete comment"
+                                  >
+                                    <Icon icon="mdi:delete" className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Pagination for Comments */}
+                        {totalComments > itemsPerPage && (
+                          <div className="mt-6 flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Showing {((commentsPage - 1) * itemsPerPage) + 1} to {Math.min(commentsPage * itemsPerPage, totalComments)} of {totalComments} comments
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => fetchMoreComments(commentsPage - 1)}
+                                disabled={commentsPage === 1 || activityLoading}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Previous
+                              </button>
+                              <span className="px-3 py-1 text-sm bg-forest text-white rounded-md">
+                                {commentsPage}
+                              </span>
+                              <button
+                                onClick={() => fetchMoreComments(commentsPage + 1)}
+                                disabled={commentsPage * itemsPerPage >= totalComments || activityLoading}
+                                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -645,6 +1820,19 @@ const SettingsPage = () => {
         message="Are you absolutely sure? This will permanently delete your account and all associated data including posts, listings, and messages. This action cannot be undone."
         type="danger"
       />
+
+      {/* Post Modal */}
+      {selectedPost && modalOpen && (
+        <PostModal
+          post={selectedPost}
+          modalOpen={modalOpen}
+          onClose={() => {
+            setSelectedPost(null);
+            setModalOpen(false);
+          }}
+          token={typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}
+        />
+      )}
     </div>
   );
 };

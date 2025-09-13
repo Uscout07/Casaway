@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import OnboardingProgress from '../components/OnboardingProgress';
 import Logo from '../components/logo';
+import { useAuth } from '../contexts/AuthContext';
 
 
 interface AuthFormData {
@@ -39,8 +40,12 @@ const ReferralHandler = ({
 
 
 const AuthForm = () => {
+  const { login, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refCode, setRefCode] = useState<string | null>(null);
   const [inviteeName, setInviteeName] = useState<string | null>(null);
@@ -52,8 +57,12 @@ const AuthForm = () => {
     confirmPassword: ''
   });
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // Handle redirect when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/home');
+    }
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     const urlMode = searchParams.get("mode") as 'login' | 'register';
@@ -136,9 +145,10 @@ const AuthForm = () => {
         throw new Error(data.msg || `Server error: ${response.status}`);
       }
 
-      // save token & user
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // save token & user using auth context
+      console.log('Auth success - storing token:', data.token);
+      login(data.token, data.user);
+      
       if (mode === 'register') {
         router.push('/complete-profile');
       } else {
@@ -148,6 +158,30 @@ const AuthForm = () => {
       setError(err.message || 'Unexpected error occurred.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    
+    try {
+      // Get invite token from localStorage if available
+      const inviteToken = typeof window !== "undefined"
+        ? localStorage.getItem("inviteToken")
+        : null;
+      
+      // Build Google OAuth URL with invite token if available
+      let googleOAuthUrl = `${API_BASE_URL}/api/oauth/google`;
+      if (inviteToken) {
+        googleOAuthUrl += `?inviteToken=${encodeURIComponent(inviteToken)}`;
+      }
+      
+      // Redirect to Google OAuth endpoint
+      window.location.href = googleOAuthUrl;
+    } catch (err: any) {
+      setError(err.message || 'Failed to initiate Google sign-in');
+      setGoogleLoading(false);
     }
   };
 
@@ -254,9 +288,30 @@ const AuthForm = () => {
           </button>
         </div>
 
+        {/* OR separator */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-300"></div>
+          <span className="mx-4 text-gray-500 text-sm">or continue with</span>
+          <div className="flex-1 h-px bg-gray-300"></div>
+        </div>
+
+        {/* Google Sign-in Button */}
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading}
+          className="w-full border border-gray-300 bg-white text-gray-700 py-2 rounded hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {googleLoading ? (
+            <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+          ) : (
+            <Icon icon="logos:google-icon" className="w-5 h-5" />
+          )}
+          {googleLoading ? 'Signing in...' : 'Continue with Google'}
+        </button>
+
         <p className="text-center text-gray-600 mt-4">
           {mode === 'login'
-            ? <>Don’t have an account? <button onClick={() => setMode('register')} className="text-forest">Sign up</button></>
+            ? <>Don't have an account? <button onClick={() => setMode('register')} className="text-forest">Sign up</button></>
             : <>Already have an account? <button onClick={() => setMode('login')} className="text-forest">Sign in</button></>}
         </p>
       </div>

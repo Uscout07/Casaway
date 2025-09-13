@@ -142,21 +142,31 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         <Icon icon="material-symbols:location-on-outline" className="w-4 h-4 mr-1" />
                         <span>{listing.city}, {listing.country}</span>
                     </div>
-                    <div className="flex flex-wrap gap-2 justify-end items-end mt-auto">
+                    <div className="flex flex-wrap gap-2 justify-end items-end mt-2">
                         {listing.type && (
-                            <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                            <span className="px-3 py-1  bg-gray-100 text-gray-700 text-xs rounded-full">
                                 {listing.type}
                             </span>
                         )}
-                        {listing.tags.includes('live-with-family') && (
-                            <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                                Live with Family
-                            </span>
-                        )}
-                        {listing.tags.includes('women-only') && (
-                            <span className="px-3 py-1 bg-pink-100 text-pink-700 text-xs rounded-full">
-                                Women Only
-                            </span>
+                        {Array.isArray(listing.tags) && listing.tags.length > 0 && (
+                          <>
+                            {listing.tags
+                              .slice(0, 4)
+                              .map((tag, i) => {
+                                const normalized = tag.toLowerCase();
+                                // Match mobile color scheme: women -> purple; pet -> pink; default -> blue
+                                const cls = normalized.includes('women')
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : normalized.includes('pet')
+                                    ? 'bg-pink-100 text-pink-700'
+                                    : 'bg-blue-100 text-blue-700';
+                                return (
+                                  <span key={i} className={`px-3 py-1 ${cls} text-xs rounded-full`}>
+                                    {tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </span>
+                                );
+                              })}
+                          </>
                         )}
                     </div>
                 </div>

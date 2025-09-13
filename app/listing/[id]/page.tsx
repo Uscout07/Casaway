@@ -280,6 +280,18 @@ const ListingDetailPage: React.FC = () => {
         }
     }, [loggedInUserId, listingId]);
 
+    // Handler for messaging the host
+    const handleMessageHost = () => {
+        if (listing?.user?._id) {
+            router.push(`/messages/${listing.user._id}`);
+        }
+    };
+
+    // Handler for viewing host profile
+    const handleViewProfile = (userId: string) => {
+        router.push(`/profile/${userId}`);
+    };
+
     // Modified handleContactHost to accept startDate and endDate as string parameters
     const handleContactHost = async (startDateStr: string | null, endDateStr: string | null) => {
         if (!loggedInUser) {
@@ -391,7 +403,13 @@ const ListingDetailPage: React.FC = () => {
                         // Removed startDate, endDate, handleDateChange props
                         handleContactHost={handleContactHost} // Now directly passes the string dates
                     />
-                    {listing.user && <ProfileHeader user={listing.user} />}
+                    {listing.user && (
+                        <ProfileHeader 
+                            user={listing.user} 
+                            onMessageHost={handleMessageHost}
+                            onViewProfile={handleViewProfile}
+                        />
+                    )}
                 </div>
                 <hr className="my-6 border-gray-200" />
                 <CommentSection

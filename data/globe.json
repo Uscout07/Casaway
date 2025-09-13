@@ -1,0 +1,74 @@
+[
+  {
+    "order": 1,
+    "startLat": 40.7128,
+    "startLng": -74.0060,
+    "endLat": 51.5074,
+    "endLng": -0.1278,
+    "arcAlt": 0.1,
+    "color": "#4A902C"
+  },
+  {
+    "order": 2,
+    "startLat": 51.5074,
+    "startLng": -0.1278,
+    "endLat": 35.6762,
+    "endLng": 139.6503,
+    "arcAlt": 0.2,
+    "color": "#4A902C"
+  },
+  {
+    "order": 3,
+    "startLat": 35.6762,
+    "startLng": 139.6503,
+    "endLat": -33.8688,
+    "endLng": 151.2093,
+    "arcAlt": 0.1,
+    "color": "#4A902C"
+  },
+  {
+    "order": 4,
+    "startLat": -33.8688,
+    "endLng": 151.2093,
+    "endLat": 37.7749,
+    "endLng": -122.4194,
+    "arcAlt": 0.2,
+    "color": "#4A902C"
+  },
+  {
+    "order": 5,
+    "startLat": 37.7749,
+    "startLng": -122.4194,
+    "endLat": 40.7128,
+    "endLng": -74.0060,
+    "arcAlt": 0.1,
+    "color": "#4A902C"
+  },
+  {
+    "order": 6,
+    "startLat": 40.7128,
+    "startLng": -74.0060,
+    "endLat": 25.7617,
+    "endLng": -80.1918,
+    "arcAlt": 0.15,
+    "color": "#4A902C"
+  },
+  {
+    "order": 7,
+    "startLat": 51.5074,
+    "startLng": -0.1278,
+    "endLat": 48.8566,
+    "endLng": 2.3522,
+    "arcAlt": 0.1,
+    "color": "#4A902C"
+  },
+  {
+    "order": 8,
+    "startLat": 35.6762,
+    "startLng": 139.6503,
+    "endLat": 1.3521,
+    "endLng": 103.8198,
+    "arcAlt": 0.2,
+    "color": "#4A902C"
+  }
+]

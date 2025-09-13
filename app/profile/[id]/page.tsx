@@ -12,6 +12,7 @@ import ProfileErrorDisplay from '../profileErrorDisplay';
 
 // Import existing components
 import PostModal from '../../components/postModal';
+import FollowersModal from '../../components/FollowersModal';
 
 // Import interfaces from the shared types file
 import { User, Post } from '../profileTypes'; // Adjust path as necessary
@@ -33,6 +34,8 @@ const ProfilePage = () => {
     const [postsError, setPostsError] = useState<string | null>(null);
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [followersModalOpen, setFollowersModalOpen] = useState(false);
+    const [followingModalOpen, setFollowingModalOpen] = useState(false);
 
     const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
     const [isMyProfile, setIsMyProfile] = useState(false);
@@ -270,6 +273,79 @@ const ProfilePage = () => {
         setModalOpen(true);
     };
 
+    const handleFollowersClick = () => {
+        setFollowersModalOpen(true);
+    };
+
+    const handleFollowingClick = () => {
+        setFollowingModalOpen(true);
+    };
+
+    const handleFollowToggleInModal = async (targetUserId: string) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Please log in to follow users.");
+            router.push('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/follow/follow/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.isFollowing;
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || 'Failed to follow user');
+            }
+        } catch (error) {
+            console.error('Error following user:', error);
+            throw error;
+        }
+    };
+
+    const handleRemoveFollower = async (targetUserId: string) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Please log in to remove followers.");
+            router.push('/login');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/follow/remove-follower/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Update followers count
+                setFollowersCount(prev => prev - 1);
+                // Update user state
+                setUser(prevUser => prevUser ? {
+                    ...prevUser,
+                    followers: prevUser.followers?.filter(id => id !== targetUserId) || []
+                } : prevUser);
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.msg || 'Failed to remove follower');
+            }
+        } catch (error) {
+            console.error('Error removing follower:', error);
+            throw error;
+        }
+    };
+
     if (userLoading) {
         return <ProfileLoadingSkeleton />;
     }
@@ -290,6 +366,8 @@ const ProfilePage = () => {
                     postsCount={posts.length} 
                     onFollowToggle={handleFollowToggle}
                     onStartChat={handleStartChat}
+                    onFollowersClick={handleFollowersClick}
+                    onFollowingClick={handleFollowingClick}
                 />
             )}
             <ListingsSection
@@ -315,6 +393,25 @@ const ProfilePage = () => {
                     token={typeof window !== 'undefined' ? localStorage.getItem('token') || '' : ''}
                 />
             )}
+
+            <FollowersModal
+                isOpen={followersModalOpen}
+                onClose={() => setFollowersModalOpen(false)}
+                userId={userId}
+                type="followers"
+                isMyProfile={isMyProfile}
+                onFollowToggle={handleFollowToggleInModal}
+                onRemoveFollower={handleRemoveFollower}
+            />
+
+            <FollowersModal
+                isOpen={followingModalOpen}
+                onClose={() => setFollowingModalOpen(false)}
+                userId={userId}
+                type="following"
+                isMyProfile={isMyProfile}
+                onFollowToggle={handleFollowToggleInModal}
+            />
         </div>
     );
 };

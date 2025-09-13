@@ -55,6 +55,9 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
         thumbnail: '',
         status: 'draft',
     });
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [removeImageUrls, setRemoveImageUrls] = useState<string[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         if (listingId) {
@@ -118,63 +121,37 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value, checked } = e.target;
+    const toggleMultiSelectValue = (name: 'amenities' | 'roommates' | 'tags', value: string) => {
         setFormData(prev => {
-            const currentArray = prev[name as keyof Partial<Listing>] as string[] || [];
-            if (checked) {
-                return { ...prev, [name]: [...currentArray, value] };
-            } else {
+            const currentArray = (prev[name] as string[]) || [];
+            if (currentArray.includes(value)) {
                 return { ...prev, [name]: currentArray.filter(item => item !== value) };
             }
+            return { ...prev, [name]: [...currentArray, value] };
         });
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-        const newImages = [...(formData.images || [])];
-        newImages[index] = e.target.value;
-        setFormData(prev => ({ ...prev, images: newImages }));
+    const onFilesSelected = (fileList: FileList | null) => {
+        if (!fileList) return;
+        const filesArray = Array.from(fileList);
+        setSelectedFiles(prev => [...prev, ...filesArray]);
     };
-
-    const addImageField = () => {
-        setFormData(prev => ({
-            ...prev,
-            images: [...(prev.images || []), ''],
-        }));
-    };
-
-    const removeImageField = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: (prev.images || []).filter((_, i) => i !== index),
-        }));
-    };
-
-    const handleAvailabilityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number, field: 'startDate' | 'endDate') => {
-        const newAvailability = [...(formData.availability || [])];
-
-        // Ensure the array has an object at this index
-        if (!newAvailability[index]) {
-            newAvailability[index] = { startDate: '', endDate: '' };
+    const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            onFilesSelected(e.dataTransfer.files);
+            e.dataTransfer.clearData();
         }
-
-        newAvailability[index][field] = e.target.value;
-
-        setFormData(prev => ({ ...prev, availability: newAvailability }));
     };
-    const addAvailabilityPeriod = () => {
-        setFormData(prev => ({
-            ...prev,
-            availability: [...(prev.availability || []), { startDate: '', endDate: '' }], // Add a new object
-        }));
+    const removeSelectedFileAt = (idx: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
+    };
+    const toggleRemoveExistingUrl = (url: string) => {
+        setRemoveImageUrls(prev => prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]);
     };
 
-    const removeAvailabilityPeriod = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            availability: (prev.availability || []).filter((_, i) => i !== index),
-        }));
-    };
+    // Availability editing removed per request
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -190,18 +167,36 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
 
         try {
             const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                setError('Authentication required. Please log in.');
+                setLoading(false);
+                return;
+            }
+
+            const form = new FormData();
+            form.append('title', formData.title || '');
+            form.append('details', formData.details || '');
+            form.append('type', formData.type || 'Single Room');
+            form.append('city', formData.city || '');
+            form.append('country', formData.country || '');
+            form.append('status', formData.status || 'draft');
+            (formData.amenities || []).forEach(a => form.append('amenities', a));
+            (formData.roommates || []).forEach(r => form.append('roommates', r));
+            (formData.tags || []).forEach(t => form.append('tags', t));
+            selectedFiles.forEach(file => form.append('images', file));
+            removeImageUrls.forEach(url => form.append('removeImageUrls', url));
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/listing/${listingId}`, {
-                method: 'PATCH', // or 'PATCH'
+                method: 'PATCH',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData),
+                body: form,
             });
 
             if (response.ok) {
                 alert('Listing updated successfully!');
-                onSuccess(); // Call success callback to refresh parent list
+                onSuccess();
             } else {
                 const errorData = await response.json();
                 setError(errorData.msg || 'Failed to update listing.');
@@ -212,13 +207,6 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
             console.error('Error updating listing:', err);
         } finally {
             setLoading(false);
-        }
-        const token = localStorage.getItem('token');
-        console.log('Token from localStorage:', token); // <-- Add this line
-        if (!token) {
-            console.error('No token found, cannot send request.');
-            // You might want to display an error to the user or redirect to login
-            return;
         }
     };
 
@@ -261,7 +249,7 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
     }
 
     return (
-        <div className="p-2 sm:p-6 bg-white rounded-lg  mb-8 max-w-full md:max-w-4xl mx-auto">
+        <div className="p-4 bg-white rounded-lg mb-8 mx-auto w-full max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-bold text-forest mb-6 text-center">Edit Listing: {listing?.title}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -338,149 +326,127 @@ const EditListingForm: React.FC<EditListingFormProps> = ({ listingId, onCancel, 
                 {/* Amenities */}
                 <div>
                     <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Amenities</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {availableAmenities.map(amenity => (
-                            <div key={amenity} className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id={`amenity-${amenity}`}
-                                    name="amenities"
-                                    value={amenity}
-                                    checked={formData.amenities?.includes(amenity) || false}
-                                    onChange={handleCheckboxChange}
-                                    className="h-4 w-4 text-teal-600 focus:forest-light border-gray-300 rounded"
-                                />
-                                <label htmlFor={`amenity-${amenity}`} className="ml-2 text-sm text-gray-700">{amenity}</label>
-                            </div>
-                        ))}
+                    <div className="flex flex-wrap gap-2">
+                        {availableAmenities.map(amenity => {
+                            const selected = formData.amenities?.includes(amenity);
+                            return (
+                                <button
+                                    key={amenity}
+                                    type="button"
+                                    onClick={() => toggleMultiSelectValue('amenities', amenity)}
+                                    className={`flex items-center px-3 py-2 rounded-md border text-sm ${selected ? 'bg-teal-100 border-teal-500 text-teal-800' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
+                                >
+                                    {selected ? '☑' : '☐'}
+                                    <span className="ml-2">{amenity}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Roommate Preferences */}
                 <div>
                     <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Roommate Preferences</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {roommateOptions.map(option => (
-                            <div key={option} className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id={`roommate-${option}`}
-                                    name="roommates"
-                                    value={option}
-                                    checked={formData.roommates?.includes(option) || false}
-                                    onChange={handleCheckboxChange}
-                                    className="h-4 w-4 text-teal-600 focus:forest-light border-gray-300 rounded"
-                                />
-                                <label htmlFor={`roommate-${option}`} className="ml-2 text-sm text-gray-700">{option}</label>
-                            </div>
-                        ))}
+                    <div className="flex flex-wrap gap-2">
+                        {roommateOptions.map(option => {
+                            const selected = formData.roommates?.includes(option);
+                            return (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    onClick={() => toggleMultiSelectValue('roommates', option)}
+                                    className={`flex items-center px-3 py-2 rounded-md border text-sm ${selected ? 'bg-teal-100 border-teal-500 text-teal-800' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
+                                >
+                                    {selected ? '☑' : '☐'}
+                                    <span className="ml-2">{option}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Tags (Features) */}
                 <div>
                     <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Additional Features (Tags)</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {commonTags.map(tag => (
-                            <div key={tag} className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id={`tag-${tag}`}
-                                    name="tags"
-                                    value={tag}
-                                    checked={formData.tags?.includes(tag) || false}
-                                    onChange={handleCheckboxChange}
-                                    className="h-4 w-4 text-teal-600 focus:forest-light border-gray-300 rounded"
-                                />
-                                <label htmlFor={`tag-${tag}`} className="ml-2 text-sm text-gray-700 capitalize">{tag.replace(/-/g, ' ')}</label>
-                            </div>
-                        ))}
+                    <div className="flex flex-wrap gap-2">
+                        {commonTags.map(tag => {
+                            const selected = formData.tags?.includes(tag);
+                            return (
+                                <button
+                                    key={tag}
+                                    type="button"
+                                    onClick={() => toggleMultiSelectValue('tags', tag)}
+                                    className={`flex items-center px-3 py-2 rounded-md border text-sm ${selected ? 'bg-teal-100 border-teal-500 text-teal-800' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
+                                >
+                                    {selected ? '☑' : '☐'}
+                                    <span className="ml-2 capitalize">{tag.replace(/-/g, ' ')}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                {/* Images */}
+                {/* Images - Drag & Drop */}
                 <div>
                     <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Images</h3>
-                    <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">Thumbnail URL</label>
-                    <input
-                        type="text"
-                        id="thumbnail"
-                        name="thumbnail"
-                        value={formData.thumbnail || ''}
-                        onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500 mb-4"
-                        placeholder="Main image URL for your listing"
-                    />
-                    {formData.thumbnail && (
-                        <img src={formData.thumbnail} alt="Thumbnail Preview" className="mb-4 w-48 h-32 object-cover rounded-md shadow-sm" />
-                    )}
-                    <p className="block text-sm font-medium text-gray-700 mb-2">Additional Image URLs</p>
-                    {(formData.images || []).map((image, index) => (
-                        <div key={index} className="flex items-center space-x-2 mb-2">
-                            <input
-                                type="text"
-                                value={image}
-                                onChange={(e) => handleImageChange(e, index)}
-                                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
-                                placeholder={`Image URL ${index + 1}`}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => removeImageField(index)}
-                                className="p-2 text-coral hover:text-red-800 rounded-full transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m3.707 6.293a1 1 0 0 0-1.414 0L12 10.586L9.707 8.293a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 0 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0 0-1.414Z"/></svg>
-                            </button>
+                    {listing?.images?.length ? (
+                        <div className="mb-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {listing.images.map((url, idx) => {
+                                const marked = removeImageUrls.includes(url);
+                                return (
+                                    <div key={idx} className={`relative group rounded overflow-hidden border ${marked ? 'border-red-400' : 'border-transparent'}`}>
+                                        <img src={url} alt={`Existing ${idx+1}`} className={`w-full h-24 object-cover ${marked ? 'opacity-50' : ''}`} />
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleRemoveExistingUrl(url)}
+                                            className="absolute top-1 right-1 bg-white/90 rounded px-2 py-0.5 text-xs shadow hidden group-hover:block"
+                                        >
+                                            {marked ? 'Undo' : 'Remove'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addImageField}
-                        className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200"
+                    ) : null}
+                    <div
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={onDrop}
+                        className={`rounded-xl p-6 text-center transition-colors border-2 border-dashed ${isDragging ? 'bg-forest/10 border-forest' : 'bg-white border-gray-300'}`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4c4.418 0 8 3.582 8 8s-3.582 8-8 8s-8-3.582-8-8s3.582-8 8-8m0 2a6 6 0 1 0 0 12a6 6 0 0 0 0-12m1 5h2v2h-2v2h-2v-2H9v-2h2V9h2v2Z"/></svg>
-                        <span>Add Image URL</span>
-                    </button>
+                        <div className="flex flex-col items-center justify-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-white shadow flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-forest" viewBox="0 0 24 24"><path fill="currentColor" d="M19 15v4H5v-4H3v4q0 .825.588 1.413T5 21h14q.825 0 1.413-.587T21 19v-4zM11 6.825L9.4 8.4L8 7l4-4l4 4l-1.4 1.4L13 6.825V16h-2z"/></svg>
+                            </div>
+                            <div className="text-sm text-gray-700">Drag and drop images here</div>
+                            <div className="text-xs text-gray-500">or</div>
+                            <label className="inline-block">
+                                <span className="px-3 py-2 rounded-md bg-forest text-white text-sm cursor-pointer hover:bg-pine">Browse Files</span>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(e) => onFilesSelected(e.target.files)}
+                                    className="hidden"
+                                />
+                            </label>
+                        </div>
+
+                        {selectedFiles.length > 0 && (
+                            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {selectedFiles.map((file, idx) => (
+                                    <div key={idx} className="relative rounded overflow-hidden border border-gray-200">
+                                        <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-24 object-cover" />
+                                        <button type="button" onClick={() => removeSelectedFileAt(idx)} className="absolute top-1 right-1 bg-white/90 rounded px-2 py-0.5 text-xs shadow">Remove</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-3">New uploads will be added to existing images.</p>
+                    </div>
                 </div>
 
-                {/* Availability Dates */}
-                <div>
-                    <h3 className="text-xl sm:text-2xl font-semibold text-forest mb-4">Availability</h3>
-                    {/* Ensure formData.availability is an array and has even length for pairs */}
-                    {(formData.availability || []).map((period, index) => (
-                        <div key={index} className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-2">
-                            <input
-                                type="date"
-                                value={period.startDate || ''}
-                                onChange={(e) => handleAvailabilityChange(e, index, 'startDate')}
-                                className="block w-full sm:w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
-                            />
-                            <span className="text-gray-600">-</span>
-                            <input
-                                type="date"
-                                value={period.endDate || ''}
-                                onChange={(e) => handleAvailabilityChange(e, index, 'endDate')}
-                                className="block w-full sm:w-1/2 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:forest-light focus:border-teal-500"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => removeAvailabilityPeriod(index)}
-                                className="p-2 text-coral hover:text-red-800 rounded-full transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2m3.707 6.293a1 1 0 0 0-1.414 0L12 10.586L9.707 8.293a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 0 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0 0-1.414Z"/></svg>
-                            </button>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        onClick={addAvailabilityPeriod}
-                        className="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors duration-200"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4c4.418 0 8 3.582 8 8s-3.582 8-8 8s-8-3.582-8-8s3.582-8 8-8m0 2a6 6 0 1 0 0 12a6 6 0 0 0 0-12m1 5h2v2h-2v2h-2v-2H9v-2h2V9h2v2Z"/></svg>
-                        <span>Add Availability Period</span>
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">Enter dates inYYYY-MM-DD format.</p>
-                </div>
+                {/* Availability removed */}
 
                 {/* Status */}
                 <div>

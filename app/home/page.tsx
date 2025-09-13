@@ -13,7 +13,7 @@ import { Listing } from '../types'; // <--- Crucial: Ensure this is correctly im
 
 export default function HomePage() {
   const router = useRouter();
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
 
 
   // ── AUTOCOMPLETE STATE ──
@@ -111,7 +111,7 @@ export default function HomePage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/welcome');
+      router.push('/');
       return;
     }
 
@@ -129,7 +129,7 @@ export default function HomePage() {
           router.push('/complete-profile');
         }
       } else {
-        router.push('/welcome');
+        router.push('/');
       }
     };
 

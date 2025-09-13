@@ -13,6 +13,8 @@ interface ProfileHeaderProps {
     postsCount: number; // Changed from listingsCount
     onFollowToggle: () => void;
     onStartChat: () => void;
+    onFollowersClick: () => void;
+    onFollowingClick: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -24,6 +26,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     postsCount, // Changed from listingsCount
     onFollowToggle,
     onStartChat,
+    onFollowersClick,
+    onFollowingClick,
 }) => {
     return (
         <div className="text-center my-5 bg-ambient w-full px-4 sm:px-6 lg:px-10">
@@ -121,14 +125,20 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <div className="text-2xl font-bold text-forest">{postsCount}</div>
             <div className="text-forest font-medium">Posts</div>
           </div>
-          <div className="text-center w-[30vw] md:w-[150px] h-[100px] flex flex-col items-center justify-center border-2 border-forest rounded-[20px]">
-            <div className="text-2xl font-bold text-forest">{followersCount}</div>
-            <div className="text-forest font-medium">Followers</div>
-          </div>
-          <div className="text-center w-[30vw] md:w-[150px] h-[100px] flex flex-col items-center justify-center border-2 border-forest rounded-[20px]">
-            <div className="text-2xl font-bold text-forest">{user?.following?.length || 0}</div>
-            <div className="text-forest font-medium">Following</div>
-          </div>
+          <button
+            onClick={onFollowersClick}
+            className="text-center w-[30vw] md:w-[150px] h-[100px] flex flex-col items-center justify-center border-2 border-forest rounded-[20px] hover:bg-forest hover:text-white transition-colors cursor-pointer"
+          >
+            <div className="text-2xl font-bold">{followersCount}</div>
+            <div className="font-medium">Followers</div>
+          </button>
+          <button
+            onClick={onFollowingClick}
+            className="text-center w-[30vw] md:w-[150px] h-[100px] flex flex-col items-center justify-center border-2 border-forest rounded-[20px] hover:bg-forest hover:text-white transition-colors cursor-pointer"
+          >
+            <div className="text-2xl font-bold">{user?.following?.length || 0}</div>
+            <div className="font-medium">Following</div>
+          </button>
         </div>
       </div>
     </div>

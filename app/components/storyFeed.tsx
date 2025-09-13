@@ -331,11 +331,7 @@ export default function StoryFeed() {
       return;
     }
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-    if (!API_BASE_URL) {
-      console.error('NEXT_PUBLIC_API_URL is not defined.');
-      return;
-    }
+    const API_BASE_URL = '/api';
 
     const fetchUser = async () => {
       try {

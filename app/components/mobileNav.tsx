@@ -19,7 +19,7 @@ export default function MobileNav() {
         />
         Upload
       </Link>
-      <Link href="/" className="flex flex-col items-center justify-evenly text-[8px] gap-1">
+      <Link href="/home" className="flex flex-col items-center justify-evenly text-[8px] gap-1">
         <Image width={0} height={0} className="w-full h-full" src="/ambientLogo.png" alt={'logo'}/>
         Home
       </Link>

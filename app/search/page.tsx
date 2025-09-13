@@ -35,7 +35,9 @@ const SearchPage = () => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [recommended, setRecommended] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [recLoading, setRecLoading] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,6 +47,7 @@ const SearchPage = () => {
 
   useEffect(() => {
     fetchPosts();
+    fetchRecommendations();
   }, []);
 
   const fetchPosts = async (searchParams?: { tags?: string; city?: string }) => {
@@ -63,6 +66,44 @@ const SearchPage = () => {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecommendations = async () => {
+    setRecLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || '') : '';
+      // Try dedicated recommendations endpoint if available
+      const recRes = await fetch(`${API_BASE_URL}/api/posts/recommendations`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (recRes.ok) {
+        const recData = await recRes.json();
+        setRecommended(recData);
+        return;
+      }
+
+      // Fallback: derive top tags from recent posts and fetch more by those tags
+      const tagCounts: Record<string, number> = {};
+      posts.forEach(p => (p.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+      const topTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([t]) => t);
+
+      if (topTags.length > 0) {
+        const params = new URLSearchParams({ tags: topTags.join(',') });
+        const res = await fetch(`${API_BASE_URL}/api/posts?${params.toString()}`);
+        if (res.ok) setRecommended(await res.json());
+      } else {
+        // Last resort: just show latest posts
+        const res = await fetch(`${API_BASE_URL}/api/posts`);
+        if (res.ok) setRecommended(await res.json());
+      }
+    } catch (e) {
+      // silent
+    } finally {
+      setRecLoading(false);
     }
   };
 
@@ -190,6 +231,7 @@ const SearchPage = () => {
           ))}
         </div>
       )}
+
 
       {!loading && (
         <div className="mt-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">

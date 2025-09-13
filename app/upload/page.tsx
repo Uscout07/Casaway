@@ -5,6 +5,7 @@ import { Icon } from '@iconify/react';
 import SpeedTest from '@cloudflare/speedtest';
 import CreatePostForm from '../components/createPostForm'; // Import the new component
 import StoryUpload from '../components/storyUpload';
+import { useAuth } from '../contexts/AuthContext';
 
 // Iconify Icon Component (since Iconify React isn't available, we'll create a simple wrapper)
 type IconProps = {
@@ -20,6 +21,7 @@ type CreatePostFormProps = {
 };
 
 const UploadListingPage = () => {
+    const { token, isAuthenticated } = useAuth();
     const [selectedImages, setSelectedImages] = useState<any[]>([]); // Added type for selectedImages
     const [listingType, setListingType] = useState('');
     const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]); // Added type
@@ -124,8 +126,6 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
 
         // Auto-run speed test on load
         testWifiSpeed().then(({ download, upload }) => { // Destructure both download and upload
-            console.log('[testWifiSpeed] Download Speed:', download, 'Mbps');
-            console.log('[testWifiSpeed] Upload Speed:', upload, 'Mbps');
             setWifiDownloadSpeed(download);
             setWifiUploadSpeed(upload); // Set upload speed
         });
@@ -296,13 +296,9 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
     const handleSubmitListing = async (status: 'draft' | 'published') => {
         setIsLoading(true); // Start loading state
 
-        // 1. Retrieve the token using the correct key 'token'
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        // Use token from AuthContext
 
-        // Add a log to confirm the token value right before the check
-        console.log('[handleSubmitListing] Token retrieved:', token ? 'Token found' : 'No token found');
-
-        if (!token) {
+        if (!isAuthenticated || !token) {
             alert('Please log in to create a listing');
             setIsLoading(false); // Stop loading if no token
             return; // Exit function if no token
@@ -351,46 +347,47 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
             upload: typeof wifiUploadSpeed === 'number' ? wifiUploadSpeed : 0,
         };
 
-        const listingData = {
-            title: formData.title,
-            details: formData.details,
-            type: listingType,
-            amenities,
-            features,
-            city: formData.city,
-            country: formData.country,
-            tags,
-            availability,
-            images: imageUrls,
-            thumbnail: imageUrls[thumbnailIndex] || imageUrls[0] || '',
-            status,
-            roommates,
-            petTypes,
-            wifiSpeed: wifiSpeedData,
+        // Create FormData for file upload
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('details', formData.details);
+        formDataToSend.append('type', listingType);
+        formDataToSend.append('amenities', JSON.stringify(amenities));
+        formDataToSend.append('features', JSON.stringify(features));
+        formDataToSend.append('city', formData.city);
+        formDataToSend.append('country', formData.country);
+        formDataToSend.append('tags', JSON.stringify(tags));
+        formDataToSend.append('availability', JSON.stringify(availability));
+        formDataToSend.append('status', status);
+        formDataToSend.append('roommates', JSON.stringify(roommates));
+        formDataToSend.append('petTypes', JSON.stringify(petTypes));
+        formDataToSend.append('wifiSpeed', JSON.stringify(wifiSpeedData));
 
-        };
+        // Add thumbnail index
+        formDataToSend.append('thumbnail', thumbnailIndex.toString());
 
+        // Add all selected images as files
+        selectedImages.forEach((image, index) => {
+            if (image.file instanceof File) {
+                formDataToSend.append('images', image.file);
+            }
+        });
 
         try {
-            console.log('[handleSubmitListing] Submitting listing data:', listingData);
-            console.log('[handleSubmitListing] Authorization Token:', token); // Log the token here
 
-            // 3. Perform the fetch request with correct URL and headers
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/listing`, { // Corrected: '/api/listing' (singular)
+            // 3. Perform the fetch request with FormData
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/listing`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Ensure token is correctly added
+                    'Authorization': `Bearer ${token}` // Don't set Content-Type for FormData
                 },
-                body: JSON.stringify(listingData),
+                body: formDataToSend,
             });
 
             const result = await response.json();
-            console.log('[handleSubmitListing] API Response:', result);
 
             if (response.ok) {
                 alert(`Listing ${status === 'published' ? 'published' : 'saved as draft'} successfully!`);
-                console.log('✅ Listing created:', result);
                 // Optionally, clear form or redirect after successful submission
                 // router.push('/dashboard'); // Example: redirect to dashboard
             } else {
@@ -424,7 +421,7 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
                 <div className="relative inline-flex rounded-full overflow-hidden bg-forest-medium p-1 w-full max-w-xl sm:max-w-3xl">
                     <button
                         onClick={() => setViewMode('listing')}
-                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6  rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center hidden
+                        className={`py-2 sm:py-3 px-3 sm:px-4 md:px-6  rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-bold transition-colors z-10 flex-1 text-center
                         ${viewMode === 'listing' ? 'text-white bg-forest' : 'text-white'}`}
                     >
                         <span className="hidden sm:inline">Create a Listing</span>
@@ -767,7 +764,7 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
                         </div>
 
                         {/* Wifi Speed Section */}
-                        <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+                        {/* <div className="rounded-lg p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
                             <h3 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 mb-3 sm:mb-4">Wi-Fi Speed (Mbps)</h3>
 
                             <div className="flex flex-col gap-2">
@@ -797,7 +794,7 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
                                     {isLoading ? 'Testing...' : 'Retest Wi-Fi Speed'}
                                 </button>
                             </div>
-                        </div>
+                        </div> */}
 
 
                         {/* Basic Information */}
@@ -844,7 +841,7 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4 mb-5">
                             <button
                                 onClick={() => handleSubmitListing('draft')}
                                 disabled={isLoading}

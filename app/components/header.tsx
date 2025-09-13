@@ -4,7 +4,8 @@ import { Icon } from "@iconify/react";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from 'next/link'
+import Link from 'next/link';
+import { useAuth } from "../contexts/AuthContext";
 
 
 interface User {
@@ -21,6 +22,7 @@ export default function NavBar() {
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function NavBar() {
       }
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/me`, {
+        const res = await fetch(`/api/users/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -51,14 +53,38 @@ export default function NavBar() {
 
         setUser(userData);
       } catch (error) {
-        console.error("Error fetching user:", error);
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchUnreadNotifications = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const res = await fetch('/api/notifications/unread-count', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadNotifications(data.count || 0);
+        }
+      } catch (error) {
+        // Handle error silently
+      }
+    };
+
     fetchUser();
+    fetchUnreadNotifications();
+
+    // Set up interval to check for new notifications every 30 seconds
+    const interval = setInterval(fetchUnreadNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -78,9 +104,10 @@ export default function NavBar() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [dropdownOpen]);
 
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/auth");
+    logout();
   };
 
   const renderProfileImage = () => {
@@ -106,7 +133,7 @@ export default function NavBar() {
         </div>
 
         <nav className="flex space-x-16 items-center">
-          <Link href="/" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
+          <Link href="/home" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
           <Link href="/search" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Search</Link>
           <Link href="/upload" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Upload</Link>
           <Link href="/messages" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Messages</Link>
@@ -118,11 +145,22 @@ export default function NavBar() {
             <Link href="/admin" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Admin</Link>
           )}
         </nav>
-        <div className="flex items-center gap-5">
-          <Link href="/notifications" className="w-[32px] h-[32px] rounded-full bg-forest-light flex items-center justify-center hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">
-            <Icon icon="ph:bell-duotone" width="24" height="24" className="text-forest" />
+        <div className="flex items-center justify-center gap-5">
+          {/* Notification Icon */}
+          <Link 
+            href="/notifications" 
+            className="relative p-2 text-forest hover:text-forest-dark transition-colors duration-200"
+          >
+            <Icon icon="material-symbols:notifications" className="w-6 h-6" />
+            {/* Notification Badge */}
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-xs text-white flex items-center justify-center px-1">
+                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+              </span>
+            )}
           </Link>
-          <div className="relative" ref={dropdownRef}>
+          
+          <div className="relative flex items-center justify-center" ref={dropdownRef}>
             {loading ? (
               <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
             ) : (
@@ -135,7 +173,7 @@ export default function NavBar() {
             )}
 
             {dropdownOpen && !loading && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+              <div className="absolute right-0 mt-4 w-48 bg-white rounded-md shadow-lg z-50">
                 <button
                   onClick={() => {
                     if (user?._id) router.push(`/profile/${user._id}`);
@@ -162,9 +200,20 @@ export default function NavBar() {
           <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
         </div>
         <div className="flex items-center gap-5">
-          <Link href="/notifications" className="w-[40px] h-[40px] rounded-full bg-forest-light flex items-center justify-center hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">
-            <Icon icon="ph:bell-duotone" width="28" height="28" className="text-forest" />
+          {/* Mobile Notification Icon */}
+          <Link 
+            href="/notifications" 
+            className="relative p-2 text-forest hover:text-forest-dark transition-colors duration-200"
+          >
+            <Icon icon="material-symbols:notifications" className="w-6 h-6" />
+            {/* Notification Badge */}
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-xs text-white flex items-center justify-center px-1">
+                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+              </span>
+            )}
           </Link>
+          
           <div className="relative" ref={dropdownRef}>
             {loading ? (
               <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
@@ -178,7 +227,7 @@ export default function NavBar() {
             )}
 
             {dropdownOpen && !loading && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+              <div className="absolute right-0 top-2 w-48 bg-white rounded-md shadow-lg z-50">
                 {user?._id && (
                   <button
                     onClick={() => {

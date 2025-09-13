@@ -1,54 +1,160 @@
 'use client';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Icon } from '@iconify/react';
+import { chatApi } from '../../services/chatApi';
 
-interface UserPopulated {
-    _id: string;
-    name: string;
-    email: string;
-    profilePic?: string;
-}
-
+interface User { _id: string; name?: string; username?: string }
+interface Message { _id: string; sender: User; content: string; createdAt: string; }
+interface UserPopulated { _id: string; name?: string; profilePic?: string }
 interface Chat {
-    _id: string;
-    members: UserPopulated[];
-    isGroup: boolean;
-    lastMessage?: string;
-    messages: string[];
-    createdAt: string;
-    updatedAt: string;
+  _id: string;
+  members: UserPopulated[];
+  isGroup: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  lastMessage?: { content: string; createdAt: string; updatedAt: string };
 }
 
-interface Message {
-    _id: string;
-    sender: UserPopulated;
-    chat: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
-}
+function ChatThreadPage() {
+  const params = useParams();
+  const router = useRouter();
+  const chatId = params?.id as string;
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
 
-// Custom Error Modal Component
-const ErrorModal: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
-            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-                <Icon icon="material-symbols:error-outline" className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2 text-red-700">Error!</h3>
-                <p className="text-sm text-gray-700 mb-6">{message}</p>
-                <button
-                    onClick={onClose}
-                    className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                >
-                    Close
-                </button>
-            </div>
+  const load = useCallback(async () => {
+    if (!chatId) return;
+    setLoading(true);
+    try {
+      const data = await chatApi.getChatMessages(chatId);
+      setMessages(data);
+      setError(null);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [chatId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleSend = async () => {
+    const content = newMessage.trim();
+    if (!content) return;
+    try {
+      const sent = await chatApi.sendMessage(chatId, content);
+      setMessages(prev => [...prev, sent]);
+      setNewMessage('');
+    } catch (e) {
+      // ignore for now
+    }
+  };
+
+  const startEdit = (m: Message) => {
+    setEditingId(m._id);
+    setEditContent(m.content);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const content = editContent.trim();
+    if (!content) return;
+    try {
+      const updated = await chatApi.editMessage(editingId, content);
+      setMessages(prev => prev.map(m => m._id === updated._id ? updated : m));
+      setEditingId(null);
+      setEditContent('');
+    } catch (_) {}
+  };
+
+  const delForMe = async (id: string) => {
+    try {
+      await chatApi.deleteForMe(id);
+      setMessages(prev => prev.filter(m => m._id !== id));
+    } catch (_) {}
+  };
+
+  const delForAll = async (id: string) => {
+    try {
+      await chatApi.deleteForEveryone(id);
+      setMessages(prev => prev.filter(m => m._id !== id));
+    } catch (_) {}
+  };
+
+  return (
+    <div className="min-h-screen pt-[10vh] bg-ambient">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <button onClick={() => router.push('/messages')} className="mb-4 text-forest flex items-center gap-2">
+          <Icon icon="mdi:arrow-left" /> Back
+        </button>
+
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-[70vh]">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {loading ? (
+              <div className="text-center text-gray-500 py-8">Loading...</div>
+            ) : error ? (
+              <div className="text-center text-red-600 py-8">{error}</div>
+            ) : messages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No messages yet.</div>
+            ) : (
+              messages.map(m => (
+                <div key={m._id} className="group">
+                  <div className="inline-block bg-gray-50 px-3 py-2 rounded-lg">
+                    {editingId === m._id ? (
+                      <input
+                        value={editContent}
+                        onChange={e => setEditContent(e.target.value)}
+                        className="text-sm border rounded px-2 py-1"
+                        autoFocus
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-800">{m.content}</p>
+                    )}
+                    <div className="text-[10px] text-gray-400 text-right">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition inline-flex items-center gap-2 ml-2 align-middle">
+                    {editingId === m._id ? (
+                      <>
+                        <button onClick={saveEdit} className="text-forest text-xs">Save</button>
+                        <button onClick={() => { setEditingId(null); setEditContent(''); }} className="text-gray-500 text-xs">Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(m)} className="text-blue-600 text-xs">Edit</button>
+                        <button onClick={() => delForAll(m._id)} className="text-red-600 text-xs">Delete All</button>
+                        <button onClick={() => delForMe(m._id)} className="text-gray-600 text-xs">Delete Me</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Composer */}
+          <div className="border-t p-3 flex items-center gap-2">
+            <input
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 border rounded-full px-4 py-2 text-sm"
+            />
+            <button onClick={handleSend} disabled={!newMessage.trim()} className="bg-forest text-white px-4 py-2 rounded-full disabled:opacity-50">
+              Send
+            </button>
+          </div>
         </div>
-    );
-};
-
-// Custom Prompt Modal Component
+      </div>
+    </div>
+  );
+}
 const PromptModal: React.FC<{
     message: string;
     defaultValue: string;
@@ -91,6 +197,28 @@ const PromptModal: React.FC<{
 };
 
 
+const ErrorModal: React.FC<{
+    message: string;
+    onClose: () => void;
+}> = ({ message, onClose }) => {
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">Error</h3>
+                <p className="text-sm text-gray-700 mb-6">{message}</p>
+                <div className="flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-forest text-white rounded-md hover:bg-pine transition-colors"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const ChatPage = () => {
     const params = useParams();
     const router = useRouter();
@@ -112,6 +240,15 @@ const ChatPage = () => {
     const [promptMessage, setPromptMessage] = useState('');
     const [promptInput, setPromptInput] = useState('');
     const [onPromptConfirm, setOnPromptConfirm] = useState<((value: string) => void) | null>(null);
+    // Group management state
+    const [showAddMembersModal, setShowAddMembersModal] = useState(false);
+    const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+    const [allUsers, setAllUsers] = useState<UserPopulated[]>([] as any);
+    const [userSearch, setUserSearch] = useState('');
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [groupNameInput, setGroupNameInput] = useState('');
+    const [groupDescriptionInput, setGroupDescriptionInput] = useState('');
+    const [showGroupSettings, setShowGroupSettings] = useState(false);
 
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -133,6 +270,14 @@ const ChatPage = () => {
         fetchChatDetails();
         fetchMessages();
     }, [chatId, displayErrorModal]);
+
+    // Prefill edit modal fields when chat loads
+    useEffect(() => {
+        if (chat?.isGroup) {
+            setGroupNameInput((chat as any)?.groupName || '');
+            setGroupDescriptionInput((chat as any)?.groupDescription || '');
+        }
+    }, [chat]);
 
     // Effect to scroll to the bottom of messages
     useEffect(() => {
@@ -419,21 +564,33 @@ const ChatPage = () => {
                 <span className="text-sm font-medium text-gray-600">Back to Chats</span>
             </div>
 
-            {/* Chat Partner Header */}
+            {/* Chat Header */}
             <div 
                 className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 border-b border-gray-200 flex-shrink-0 bg-ambient cursor-pointer"
                 onClick={handleChatPartnerProfileClick}
             >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 flex items-center justify-center">
-                    {chatPartnerProfilePic ? (
+                    {chat?.isGroup ? (
+                        <Icon icon="mdi:account-group" className="w-6 h-6 sm:w-8 sm:h-8 text-forest" />
+                    ) : chatPartnerProfilePic ? (
                         <img src={chatPartnerProfilePic} alt="Chat Partner" className="w-full h-full object-cover" />
                     ) : (
                         <Icon icon="material-symbols:person" className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
                     )}
                 </div>
                 <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-800 truncate">
-                    {chatPartnerName}
+                    {chat?.isGroup ? (chat as any)?.groupName || 'Group' : chatPartnerName}
                 </h2>
+                {chat?.isGroup && (
+                    <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className="p-2 hover:bg-gray-100 rounded-full text-gray-600"
+                            onClick={() => setShowGroupSettings(true)}
+                        >
+                            <Icon icon="mdi:dots-vertical" className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Messages Area */}
@@ -557,9 +714,7 @@ const ChatPage = () => {
                         onChange={(e) => setNewMessageContent(e.target.value)}
                         onKeyPress={handleKeyPress}
                     />
-                    <button className="hidden sm:block p-2 text-forest hover:bg-gray-100 rounded-full transition-colors">
-                        <Icon icon="heroicons:paper-clip" className="h-5 w-5 sm:h-6 sm:w-6" />
-                    </button>
+                   
                     <button
                         onClick={handleSendMessage}
                         className="bg-forest w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-white hover:bg-pine ml-2 transition-colors flex-shrink-0"
@@ -569,6 +724,255 @@ const ChatPage = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Group Settings Modal */}
+            {showGroupSettings && chat?.isGroup && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1300]">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <div className="text-lg font-semibold text-forest">Group Settings</div>
+                            <button className="text-gray-600" onClick={() => setShowGroupSettings(false)}>Close</button>
+                        </div>
+                        <div className="p-4">
+                            {/* Group Info */}
+                            <div className="mb-6">
+                                <div className="text-base font-semibold text-forest mb-3">Group Information</div>
+                                <label className="text-sm text-gray-700">Group Name</label>
+                                <input
+                                    className="mt-1 w-full border rounded-md px-3 py-2 mb-3"
+                                    value={groupNameInput}
+                                    onChange={(e) => setGroupNameInput(e.target.value)}
+                                />
+                                <label className="text-sm text-gray-700">Group Description</label>
+                                <textarea
+                                    className="mt-1 w-full border rounded-md px-3 py-2 min-h-[72px]"
+                                    value={groupDescriptionInput}
+                                    onChange={(e) => setGroupDescriptionInput(e.target.value)}
+                                />
+                                <div className="mt-3 flex justify-end">
+                                    <button
+                                        className="px-4 py-2 rounded-md bg-forest text-white"
+                                        onClick={async () => {
+                                            try {
+                                                await chatApi.updateGroupInfo(chatId, { groupName: groupNameInput.trim(), groupDescription: groupDescriptionInput.trim() });
+                                                await fetchChatDetails();
+                                            } catch (e: any) {
+                                                displayErrorModal(e?.message || 'Failed to update group info');
+                                            }
+                                        }}
+                                    >
+                                        Update Group Info
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Members List */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="text-base font-semibold text-forest">Members ({chat?.members?.length || 0})</div>
+                                    <button
+                                        className="px-3 py-2 rounded-md bg-forest text-white"
+                                        onClick={async () => {
+                                            try {
+                                                const users = await chatApi.getAllUsers();
+                                                setAllUsers(users);
+                                                setUserSearch('');
+                                                setSelectedUserIds([]);
+                                                setShowAddMembersModal(true);
+                                            } catch (e) {
+                                                displayErrorModal('Failed to load users');
+                                            }
+                                        }}
+                                    >
+                                        Add Members
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    {chat?.members?.map((member: any) => {
+                                        const isAdminMember = Array.isArray((chat as any)?.admins) && (chat as any)?.admins?.some((a: any) => a._id === member._id);
+                                        const isCurrentUser = member._id === loggedInUserId;
+                                        return (
+                                            <div key={member._id} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                                                <div className="flex items-center min-w-0">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center">
+                                                        {member.profilePic ? (
+                                                            <img src={member.profilePic} alt={member.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Icon icon="material-symbols:person" className="w-6 h-6 text-gray-500" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="font-medium text-black truncate">{member.name}</div>
+                                                            {isAdminMember && <span className="text-xs text-forest px-2 py-0.5 bg-green-100 rounded">Admin</span>}
+                                                            {isCurrentUser && <span className="text-xs text-blue-600 px-2 py-0.5 bg-blue-100 rounded">You</span>}
+                                                        </div>
+                                                        <div className="text-xs text-gray-600 truncate">{member.email}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {!isCurrentUser && (
+                                                        <>
+                                                            {isAdminMember ? (
+                                                                <button
+                                                                    className="text-xs text-red-600 hover:underline"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await chatApi.removeAdminFromGroup(chatId, member._id);
+                                                                            await fetchChatDetails();
+                                                                        } catch (e: any) {
+                                                                            displayErrorModal(e?.message || 'Failed to remove admin');
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Remove Admin
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    className="text-xs text-forest hover:underline"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await chatApi.addAdminToGroup(chatId, member._id);
+                                                                            await fetchChatDetails();
+                                                                        } catch (e: any) {
+                                                                            displayErrorModal(e?.message || 'Failed to make admin');
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Make Admin
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                className="text-xs text-red-600 hover:underline"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await chatApi.removeMembersFromGroup(chatId, [member._id]);
+                                                                        await fetchChatDetails();
+                                                                    } catch (e: any) {
+                                                                        displayErrorModal(e?.message || 'Failed to remove member');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Leave Group */}
+                            <div className="flex justify-end">
+                                <button
+                                    className="px-4 py-2 rounded-md bg-red-500 text-white"
+                                    onClick={async () => {
+                                        try {
+                                            await chatApi.leaveGroup(chatId);
+                                            setShowGroupSettings(false);
+                                            router.push('/messages');
+                                        } catch (e: any) {
+                                            displayErrorModal(e?.message || 'Failed to leave group');
+                                        }
+                                    }}
+                                >
+                                    Leave Group
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Add Members Modal */}
+            {showAddMembersModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1300]">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Add Members</h3>
+                        <input
+                            className="w-full border rounded-md px-3 py-2 mb-3"
+                            placeholder="Search users..."
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                        />
+                        <div className="max-h-64 overflow-y-auto border rounded">
+                            {allUsers
+                                .filter(u => (u.name || '').toLowerCase().includes(userSearch.toLowerCase()))
+                                .map(u => {
+                                    const checked = selectedUserIds.includes(u._id);
+                                    return (
+                                        <label key={u._id} className="flex items-center gap-2 p-2 border-b last:border-b-0 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => setSelectedUserIds(prev => checked ? prev.filter(id => id !== u._id) : [...prev, u._id])}
+                                            />
+                                            <span className="text-sm text-gray-800">{u.name}</span>
+                                        </label>
+                                    );
+                                })}
+                        </div>
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button className="px-4 py-2 rounded-md bg-gray-200" onClick={() => setShowAddMembersModal(false)}>Cancel</button>
+                            <button
+                                className="px-4 py-2 rounded-md bg-forest text-white"
+                                onClick={async () => {
+                                    try {
+                                        if (selectedUserIds.length === 0) return setShowAddMembersModal(false);
+                                        await chatApi.addMembersToGroup(chatId, selectedUserIds);
+                                        setShowAddMembersModal(false);
+                                        setSelectedUserIds([]);
+                                        fetchChatDetails();
+                                    } catch (e: any) {
+                                        displayErrorModal(e?.message || 'Failed to add members');
+                                    }
+                                }}
+                            >
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Group Info Modal */}
+            {showEditGroupModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1300]">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Edit Group Info</h3>
+                        <label className="text-sm text-gray-700">Group Name</label>
+                        <input
+                            className="mt-1 w-full border rounded-md px-3 py-2 mb-4"
+                            value={groupNameInput}
+                            onChange={(e) => setGroupNameInput(e.target.value)}
+                        />
+                        <label className="text-sm text-gray-700">Description</label>
+                        <textarea
+                            className="mt-1 w-full border rounded-md px-3 py-2 min-h-[72px]"
+                            value={groupDescriptionInput}
+                            onChange={(e) => setGroupDescriptionInput(e.target.value)}
+                        />
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button className="px-4 py-2 rounded-md bg-gray-200" onClick={() => setShowEditGroupModal(false)}>Cancel</button>
+                            <button
+                                className="px-4 py-2 rounded-md bg-forest text-white"
+                                onClick={async () => {
+                                    try {
+                                        await chatApi.updateGroupInfo(chatId, { groupName: groupNameInput.trim(), groupDescription: groupDescriptionInput.trim() });
+                                        setShowEditGroupModal(false);
+                                        fetchChatDetails();
+                                    } catch (e: any) {
+                                        displayErrorModal(e?.message || 'Failed to update group');
+                                    }
+                                }}
+                            >
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

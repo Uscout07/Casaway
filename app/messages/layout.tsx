@@ -1,5 +1,5 @@
 'use client';
-import React, {use, useEffect} from 'react';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import ChatList from './ChatList';
 

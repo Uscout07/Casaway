@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Icon } from '@iconify/react';
+import { chatApi } from '../services/chatApi';
 
 interface UserPopulated {
     _id: string;
@@ -33,6 +34,14 @@ const ChatList: React.FC = () => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showGroupModal, setShowGroupModal] = useState(false);
+    const [groupName, setGroupName] = useState('');
+    const [groupDescription, setGroupDescription] = useState('');
+    const [users, setUsers] = useState<UserPopulated[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [userSearch, setUserSearch] = useState('');
+    const [showUserSelector, setShowUserSelector] = useState(false);
+    const [creating, setCreating] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -125,6 +134,20 @@ const ChatList: React.FC = () => {
         }
     }, [loggedInUserId, isClient, API_BASE_URL, router]);
 
+    // Load users for selection when opening group modal
+    useEffect(() => {
+        const fetchUsers = async () => {
+            if (!showGroupModal) return;
+            try {
+                const all = await chatApi.getAllUsers();
+                setUsers(all);
+            } catch (e) {
+                console.error('Failed to load users', e);
+            }
+        };
+        fetchUsers();
+    }, [showGroupModal]);
+
     const handleChatClick = (chatId: string) => {
         router.push(`/messages/${chatId}`);
     };
@@ -171,9 +194,16 @@ const ChatList: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full overflow-y-auto bg-ambient shadow-none z-10">
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold p-3 sm:p-4 border-b border-gray-200 sticky top-0 bg-ambient z-10">
-                Your Chats
-            </h2>
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 sticky top-0 bg-ambient z-10">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">Your Chats</h2>
+                <button
+                    onClick={() => setShowGroupModal(true)}
+                    className="px-3 py-2 rounded-md bg-forest text-white flex items-center gap-2"
+                >
+                    <Icon icon="mdi:account-multiple-plus" className="text-lg" />
+                    New Group
+                </button>
+            </div>
             {chats.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-4 text-center text-gray-500">
                     <Icon icon="material-symbols:chat" className="w-12 h-12 sm:w-16 sm:h-16 mb-4 text-gray-400" />
@@ -202,7 +232,9 @@ const ChatList: React.FC = () => {
                                         if (otherMember._id) handleProfileClick(otherMember._id);
                                     }}
                                 >
-                                    {otherMember.profilePic ? (
+                                    {chat.isGroup ? (
+                                        <Icon icon="mdi:account-group" className="w-6 h-6 sm:w-8 sm:h-8 text-forest" />
+                                    ) : otherMember.profilePic ? (
                                         <img src={otherMember.profilePic} alt={otherMember.name} className="w-full h-full object-cover" />
                                     ) : (
                                         <Icon icon="material-symbols:person" className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
@@ -210,7 +242,7 @@ const ChatList: React.FC = () => {
                                 </div>
                                 <div className="flex-grow min-w-0">
                                     <div className="font-semibold text-base sm:text-lg text-forest truncate">
-                                        {chat.isGroup ? 'Group Chat (TODO)' : otherMember.name || "Loading..."}
+                                        {chat.isGroup ? (chat as any).groupName || 'Group' : otherMember.name || "Loading..."}
                                     </div>
                                     {lastMessage && (
                                         <p className="text-gray-600 text-xs sm:text-sm truncate">
@@ -234,6 +266,159 @@ const ChatList: React.FC = () => {
                             </div>
                         );
                     })}
+                </div>
+            )}
+            {showGroupModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100]">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Create Group Chat</h3>
+                        <label className="text-sm text-gray-700">Group Name</label>
+                        <input
+                            className="mt-1 w-full border rounded-md px-3 py-2 mb-4"
+                            placeholder="My Group"
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                        />
+                        <label className="text-sm text-gray-700">Group Description (optional)</label>
+                        <textarea
+                            className="mt-1 w-full border rounded-md px-3 py-2 mb-4 min-h-[72px]"
+                            placeholder="What is this group about?"
+                            value={groupDescription}
+                            onChange={(e) => setGroupDescription(e.target.value)}
+                        />
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm text-gray-700">Selected Members ({selectedUserIds.length})</label>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        setShowUserSelector(true);
+                                        if (users.length === 0) {
+                                            const all = await chatApi.getAllUsers();
+                                            setUsers(all);
+                                        }
+                                        setUserSearch('');
+                                    } catch {}
+                                }}
+                                className="px-3 py-1 rounded-md bg-forest text-white text-xs"
+                            >
+                                Add Members
+                            </button>
+                        </div>
+                        {selectedUserIds.length === 0 ? (
+                            <div className="text-xs text-gray-500 mb-2">No members selected yet.</div>
+                        ) : (
+                            <div className="space-y-2 mb-2">
+                                {users.filter(u => selectedUserIds.includes(u._id)).map(u => (
+                                    <div key={u._id} className="flex items-center justify-between bg-white p-2 rounded-md border border-gray-200">
+                                        <div className="flex items-center min-w-0">
+                                            <div className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center">
+                                                {u.profilePic ? (
+                                                    <img src={u.profilePic} alt={u.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Icon icon="material-symbols:person" className="w-5 h-5 text-gray-500" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-sm font-medium text-black truncate">{u.name}</div>
+                                                <div className="text-xs text-gray-600 truncate">{u.email}</div>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedUserIds(prev => prev.filter(id => id !== u._id))}
+                                            className="ml-2 text-red-500 hover:text-red-600"
+                                        >
+                                            <Icon icon="material-symbols:close" className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setShowGroupModal(false)} className="px-4 py-2 rounded-md bg-gray-200 text-gray-800">Cancel</button>
+                            <button
+                                disabled={creating || !groupName.trim() || selectedUserIds.length < 2}
+                                onClick={async () => {
+                                    const ids = selectedUserIds;
+                                    if (!groupName.trim() || ids.length < 2) {
+                                        setError('Provide a group name and select at least 2 members.');
+                                        return;
+                                    }
+                                    try {
+                                        setCreating(true);
+                                        await chatApi.createGroupChat(groupName.trim(), ids, groupDescription.trim() || undefined);
+                                        setShowGroupModal(false);
+                                        setGroupName('');
+                                        setGroupDescription('');
+                                        setSelectedUserIds([]);
+                                        // refresh list
+                                        const token = localStorage.getItem('token');
+                                        if (token) {
+                                            const res = await fetch(`${API_BASE_URL}/api/chat/user`, { headers: { Authorization: `Bearer ${token}` } });
+                                            if (res.ok) setChats(await res.json());
+                                        }
+                                    } catch (e: any) {
+                                        setError(e?.message || 'Failed to create group');
+                                    } finally {
+                                        setCreating(false);
+                                    }
+                                }}
+                                className={`px-4 py-2 rounded-md text-white ${creating || !groupName.trim() || selectedUserIds.length < 2 ? 'bg-forest/50 cursor-not-allowed' : 'bg-forest hover:bg-pine'}`}
+                            >
+                                {creating ? 'Creating...' : 'Create Group Chat'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* User Selector Sheet */}
+            {showGroupModal && showUserSelector && (
+                <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[1200]">
+                    <div className="bg-white w-full max-w-2xl rounded-t-2xl shadow-2xl overflow-hidden">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                            <button onClick={() => setShowUserSelector(false)} className="text-forest">Cancel</button>
+                            <div className="font-semibold text-forest">Select Members</div>
+                            <button onClick={() => setShowUserSelector(false)} className="text-forest">Done</button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200">
+                            <input
+                                className="w-full px-3 py-2 border rounded-md"
+                                placeholder="Search users..."
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                            />
+                        </div>
+                        <div className="max-h-[60vh] overflow-y-auto">
+                            {users
+                                .filter(u => (u.name || '').toLowerCase().includes(userSearch.toLowerCase()) || (u.email || '').toLowerCase().includes(userSearch.toLowerCase()))
+                                .map(u => {
+                                    const isSelected = selectedUserIds.includes(u._id);
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={u._id}
+                                            onClick={() => setSelectedUserIds(prev => isSelected ? prev.filter(id => id !== u._id) : [...prev, u._id])}
+                                            className="w-full flex items-center p-3 border-b border-gray-100 hover:bg-gray-50"
+                                        >
+                                            <div className="w-10 h-10 rounded-full overflow-hidden mr-3 bg-gray-200 flex items-center justify-center">
+                                                {u.profilePic ? (
+                                                    <img src={u.profilePic} alt={u.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Icon icon="material-symbols:person" className="w-6 h-6 text-gray-500" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="text-sm font-medium text-black truncate">{u.name}</div>
+                                                <div className="text-xs text-gray-600 truncate">{u.email}</div>
+                                            </div>
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'bg-forest border-forest' : 'border-gray-300'}`}>
+                                                {isSelected && <span className="block w-2.5 h-2.5 bg-white rounded-sm" />}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

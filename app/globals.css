@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @theme {
   --color-forest: #214F3F;
   --color-coral: #E2725B;
@@ -16,7 +17,6 @@
   --color-teal-600: #008080;
   --color-teal-700: #006666;
   --font-inter: 'Inter', sans-serif;
-
 }
 
 @layer base {
@@ -39,3 +39,6 @@ body{
 .hideScrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, and Opera */
 }
+
+
+

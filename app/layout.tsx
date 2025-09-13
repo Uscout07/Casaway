@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import 'leaflet/dist/leaflet.css';
 import ProtectedLayout from "./components/ProtectedLayout";
+import { AuthProvider } from "./contexts/AuthContext";
 
 
 const inter = Inter({
@@ -25,7 +26,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} font-sans antialiased max-md:h-full w-full overflow-x-hidden m-0 p-0`}
       >
-        <ProtectedLayout>{children}</ProtectedLayout>
+        <AuthProvider>
+          <ProtectedLayout>{children}</ProtectedLayout>
+        </AuthProvider>
       </body>
     </html>
   );
