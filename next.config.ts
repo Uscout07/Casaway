@@ -1,7 +1,7 @@
-// next.config.js
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  generateRobotsTxt: true,
+// next.config.ts
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
@@ -16,9 +16,9 @@ const nextConfig = {
       'github.com',
       'casaway-backend.onrender.com',
       'cdn.pixabay.com',
-      'casaway.s3.us-east-1.amazonaws.com' // ✅ Added S3 bucket domain
+      'casaway.s3.us-east-1.amazonaws.com'
     ],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

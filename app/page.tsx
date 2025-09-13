@@ -1,43 +1,56 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WelcomeLanding from './components/WelcomeLanding';
-import { useAuth } from './contexts/AuthContext';
-import InstantRedirect from './components/InstantRedirect';
 
 export default function RootPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const [isClient, setIsClient] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Instant redirect component that checks localStorage immediately
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      
-      if (token && user) {
-        try {
+    setIsClient(true);
+    
+    // Check authentication on client side only
+    const checkAuth = () => {
+      try {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        
+        if (token && user) {
+          // Check if token is expired
           const payload = JSON.parse(atob(token.split('.')[1]));
           const currentTime = Date.now() / 1000;
           
           if (payload.exp > currentTime) {
-            // Token is valid, redirect immediately
+            setIsAuthenticated(true);
             router.replace('/home');
             return;
+          } else {
+            // Token expired, clear it
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
           }
-        } catch {
-          // Invalid token, clear it
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
         }
+        setIsAuthenticated(false);
+      } catch (error) {
+        // Invalid token, clear it
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    checkAuth();
   }, [router]);
 
-  // Show loading state only while checking authentication
-  if (isLoading) {
+  // Show loading state during hydration
+  if (!isClient || isLoading) {
     return (
       <div className="min-h-screen bg-ambient flex items-center justify-center">
         <div className="text-center">
@@ -49,10 +62,5 @@ export default function RootPage() {
   }
 
   // Show welcome landing for unauthenticated users
-  if (!isAuthenticated) {
-    return <WelcomeLanding />;
-  }
-
-  // This should not render as authenticated users are redirected
-  return null;
+  return <WelcomeLanding />;
 }
