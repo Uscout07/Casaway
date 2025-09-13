@@ -1176,7 +1176,7 @@ const SettingsPage = () => {
                       </div>
 
                       {/* Method Selection */}
-                      <div className="flex gap-4 mb-6">
+                      <div className="flex max-md:flex-col gap-4 mb-6">
                         <button
                           type="button"
                           onClick={() => setPasswordMethod('current')}

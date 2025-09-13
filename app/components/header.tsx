@@ -112,13 +112,13 @@ export default function NavBar() {
 
   const renderProfileImage = () => {
     if (imageError || !user?.profilePic) {
-      return <Icon icon="mdi:account-circle" className="max-md:w-[40px] max-md:h-[40px] w-[32px] h-[32px] text-gray-500" />;
+      return <Icon icon="mdi:account-circle" className="max-md:w-[32px] max-md:h-[32px] w-[32px] h-[32px] text-gray-500" />;
     }
     return (
       <img
         src={user.profilePic}
         alt="Profile"
-        className="max-md:w-[40px] max-md:h-[40px] w-[32px] h-[32px] object-cover"
+        className="max-md:w-[32px] max-md:h-[32px] w-[32px] h-[32px] object-cover"
         onError={() => setImageError(true)}
       />
     );
@@ -127,10 +127,10 @@ export default function NavBar() {
   return (
     <header className="px-6 md:py-6 w-full fixed flex-1 flex items-center justify-between font-inter bg-ambient md:h-[9vh] z-50">
       <div className="top-0 z-50 w-full mx-auto flex items-center justify-between px-20 max-md:hidden">
-        <div className="flex items-center space-x-2">
-          <Image width={32} height={32} src="/logo.png" alt="Logo" />
+        <Link className="flex items-center space-x-2" href="/home">
+          <Image width={32} height={32} className="max-md:w-[24px] max-md:h-[24px]" src="/logo.png" alt="Logo" />
           <span className="text-forest font-bold text-lg">Casaway</span>
-        </div>
+        </Link>
 
         <nav className="flex space-x-16 items-center">
           <Link href="/home" className="text-forest font-bold text-[12px] hover:opacity-75 hover:scale-105 transition-all duration-300 ease-in-out">Home</Link>
@@ -149,9 +149,9 @@ export default function NavBar() {
           {/* Notification Icon */}
           <Link 
             href="/notifications" 
-            className="relative p-2 text-forest hover:text-forest-dark transition-colors duration-200"
+            className="relative p-1 text-forest hover:text-forest-dark bg transition-colors duration-200 rounded-full bg-forest/30 w-[32px] h-[32px] flex items-center justify-center"
           >
-            <Icon icon="material-symbols:notifications" className="w-6 h-6" />
+            <Icon icon="material-symbols:notifications" className="w-[25px] h-[25px]" />
             {/* Notification Badge */}
             {unreadNotifications > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-xs text-white flex items-center justify-center px-1">
@@ -196,19 +196,19 @@ export default function NavBar() {
 
       {/* Mobile Navbar */}
       <div className="flex items-center justify-between w-full max-[376px]:h-[10vh] h-[8vh] md:hidden px-4">
-        <div className="flex items-center space-x-2">
-          <Image width={48} height={48} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
-        </div>
+        <Link className="flex items-center space-x-2" href="/home">
+          <Image width={40} height={40} src="/logo.png" alt="Logo" className="md:w-10 md:h-10" />
+        </Link>
         <div className="flex items-center gap-5">
           {/* Mobile Notification Icon */}
           <Link 
             href="/notifications" 
-            className="relative p-2 text-forest hover:text-forest-dark transition-colors duration-200"
+            className="relative p-1 text-forest hover:text-forest-dark bg transition-colors duration-200 rounded-full bg-forest/30 w-[32px] h-[32px] flex items-center justify-center"
           >
-            <Icon icon="material-symbols:notifications" className="w-6 h-6" />
+            <Icon icon="material-symbols:notifications" className="w-[25px] h-[25px]" />
             {/* Notification Badge */}
             {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-xs text-white flex items-center justify-center px-1">
+              <span className="absolute -top-1 -right-1 min-w-[12px] h-[12px] bg-red-500 rounded-full text-xs text-white flex items-center justify-center px-1">
                 {unreadNotifications > 99 ? '99+' : unreadNotifications}
               </span>
             )}
@@ -216,7 +216,7 @@ export default function NavBar() {
           
           <div className="relative" ref={dropdownRef}>
             {loading ? (
-              <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
+              <div className="w-[32px] h-[32px] rounded-full overflow-hidden bg-forest-medium animate-pulse" />
             ) : (
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
