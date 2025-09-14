@@ -323,14 +323,15 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
         if (livingWith.includes('family')) tags.push('Family');
         if (livingWith.includes('roommates-women') || livingWith.includes('females-only')) tags.push('Women Only');
         if (listingType === 'Single Room') {
-            if (livingWith.includes('family')) tags.push('Family');
-            if (livingWith.includes('roommates-women')) tags.push('Women Only');
             if (livingWith.includes('pets')) {
                 tags.push('Pets Allowed');
                 tags.push(...petTypes);
                 if (customPets) tags.push(customPets);
             }
         }
+        
+        // Remove duplicate tags
+        const uniqueTags = [...new Set(tags)];
         const imageUrls = selectedImages.map(img => img.url);
 
         const roommates = [];
@@ -356,7 +357,7 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
         formDataToSend.append('features', JSON.stringify(features));
         formDataToSend.append('city', formData.city);
         formDataToSend.append('country', formData.country);
-        formDataToSend.append('tags', JSON.stringify(tags));
+        formDataToSend.append('tags', JSON.stringify(uniqueTags));
         formDataToSend.append('availability', JSON.stringify(availability));
         formDataToSend.append('status', status);
         formDataToSend.append('roommates', JSON.stringify(roommates));
