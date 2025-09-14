@@ -13,6 +13,7 @@ interface AuthFormData {
   name: string;
   username: string;
   email: string;
+  loginIdentifier: string; // For login mode - can be email or username
   password: string;
   confirmPassword: string;
 }
@@ -53,6 +54,7 @@ const AuthForm = () => {
     name: '',
     username: '',
     email: '',
+    loginIdentifier: '',
     password: '',
     confirmPassword: ''
   });
@@ -76,16 +78,22 @@ const AuthForm = () => {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.email || !formData.password) {
-      setError('Email and password are required.');
-      return false;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address.');
-      return false;
-    }
-    if (mode === 'register') {
+    if (mode === 'login') {
+      if (!formData.loginIdentifier || !formData.password) {
+        setError('Email/Username and password are required.');
+        return false;
+      }
+    } else {
+      // Register mode validation
+      if (!formData.email || !formData.password) {
+        setError('Email and password are required.');
+        return false;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setError('Please enter a valid email address.');
+        return false;
+      }
       if (!formData.username) {
         setError('Username is required.');
         return false;
@@ -124,7 +132,15 @@ const AuthForm = () => {
         : '/api/auth/register';
 
       const payload = mode === 'login'
-        ? { email: formData.email, password: formData.password }
+        ? (() => {
+            // Determine if loginIdentifier is email or username
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isEmail = emailRegex.test(formData.loginIdentifier);
+            
+            return isEmail 
+              ? { email: formData.loginIdentifier, password: formData.password }
+              : { username: formData.loginIdentifier, password: formData.password };
+          })()
         : {
             name: formData.name,
             username: formData.username,
@@ -241,17 +257,31 @@ const AuthForm = () => {
               </div>
             </>
           )}
-          <div>
-            <label className="block text-sm mb-1">Email</label>
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full border px-3 py-2 rounded"
-              placeholder="you@example.com"
-            />
-          </div>
+          {mode === 'login' ? (
+            <div>
+              <label className="block text-sm mb-1">Email or Username</label>
+              <input
+                name="loginIdentifier"
+                type="text"
+                value={formData.loginIdentifier}
+                onChange={handleInputChange}
+                className="w-full border px-3 py-2 rounded"
+                placeholder="you@example.com or username"
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm mb-1">Email</label>
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full border px-3 py-2 rounded"
+                placeholder="you@example.com"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm mb-1">Password</label>
             <input
