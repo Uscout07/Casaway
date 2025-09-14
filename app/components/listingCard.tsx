@@ -150,7 +150,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         )}
                         {Array.isArray(listing.tags) && listing.tags.length > 0 && (
                           <>
-                            {listing.tags
+                            {[...new Set(listing.tags)]
                               .slice(0, 4)
                               .map((tag, i) => {
                                 const normalized = tag.toLowerCase();
