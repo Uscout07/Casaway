@@ -24,31 +24,29 @@ export default function CongratulationsPage() {
           </div>
           
           {/* Main Heading */}
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">You're all set!</h1>
+          <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome to Casaway!</h1>
           
           {/* Description */}
           <p className="text-lg text-gray-600 leading-6 mb-8">
-            Welcome to the Casaway community! The official app launch is coming soon. 
-            In the meantime, explore our mock listings to get a feel for the platform.
+            The official app launch is on <strong>March 15, 2024</strong>.
+            <br /><br />
+            Feel free to post your listing now! Come back to see all listings from college students around the world.
           </p>
 
           {/* Action Buttons - Consistent styling with WelcomeLanding */}
           <div className="space-y-4">
             <button
-              onClick={() => router.push('/home')}
+              onClick={() => router.push('/upload')}
               className="w-full bg-forest py-4 px-6 rounded-xl shadow-lg text-white font-semibold text-lg hover:bg-forest-medium transition-all duration-300 ease-in-out"
             >
-              Explore Mock Listings
+              Post my listing
             </button>
             
             <button
-              onClick={() => {
-                alert('We will notify you on launch day!');
-                router.push('/home');
-              }}
+              onClick={() => router.push('/home')}
               className="w-full bg-white border-2 border-forest py-4 px-6 rounded-xl text-forest font-semibold text-lg hover:bg-forest-light transition-all duration-300 ease-in-out"
             >
-              Come Back on Launch Day
+              Come back on March 15, 2024
             </button>
           </div>
 

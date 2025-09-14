@@ -218,9 +218,14 @@ export default function ReferralPage() {
 
       <div className="flex flex-col gap-6">
         <div className="rounded-lg p-6 bg-white">
-          <h2 className="text-xl font-semibold mb-2 text-forest">Your Stats</h2>
+          <h2 className="text-xl font-semibold mb-2 text-forest">Reward Tracker</h2>
           <p><strong>Referrals:</strong> {referralCount}</p>
           <p><strong>Points:</strong> {points}</p>
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-600 mb-2"><strong>Point System:</strong></p>
+            <p className="text-sm text-gray-600">+1 listing = 1 point</p>
+            <p className="text-sm text-gray-600">+1 referral account sign up = 1 point</p>
+          </div>
         </div>
 
         <div className="rounded-lg p-6">
