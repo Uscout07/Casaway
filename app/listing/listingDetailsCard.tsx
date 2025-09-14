@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { Listing, Comment } from './listingPageTypes';
+import { getTagDescription } from '../utils/tagDescriptions';
 
 interface ListingDetailsCardProps {
     listing: Listing;
@@ -351,8 +352,17 @@ const ListingDetailsCard: React.FC<ListingDetailsCardProps> = ({
                                     : 'bg-blue-100 text-blue-700';
 
                             return (
-                                <span key={index} className={`px-3 py-1 text-sm rounded-full ${tagClass}`}>
+                                <span 
+                                    key={index} 
+                                    className={`px-3 py-1 text-sm rounded-full ${tagClass} cursor-help relative group`}
+                                    title={getTagDescription(tag)}
+                                >
                                     {tag.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    {/* Hover tooltip */}
+                                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                        {getTagDescription(tag)}
+                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                    </div>
                                 </span>
                             );
                         })}
