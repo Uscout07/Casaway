@@ -342,7 +342,7 @@ const ListingDetailsCard: React.FC<ListingDetailsCardProps> = ({
                 <>
                     <h2 className="text-2xl font-semibold text-gray-900 mb-3 mt-3">Tags</h2>
                     <div className="flex flex-wrap gap-2 mb-6">
-                        {listing.tags.map((tag, index) => {
+                        {[...new Set(listing.tags)].map((tag, index) => {
                             const normalized = tag.toLowerCase();
                             const tagClass = normalized.includes('women')
                                 ? 'bg-purple-100 text-purple-700'
