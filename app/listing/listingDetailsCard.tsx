@@ -68,6 +68,14 @@ const ListingDetailsCard: React.FC<ListingDetailsCardProps> = ({
 
     const handleDateClick = (day: number) => {
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const clickedDate = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+
+        // Only allow future dates
+        if (clickedDate < today) {
+            return; // Don't allow selection of past dates
+        }
 
         if (!selectedRange.start || (selectedRange.start && selectedRange.end)) {
             // If no start date or a full range is already selected, start a new range
@@ -112,6 +120,10 @@ const ListingDetailsCard: React.FC<ListingDetailsCardProps> = ({
 
         for (let day = 1; day <= daysInMonth; day++) {
             const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const clickedDate = new Date(dateStr);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isPastDate = clickedDate < today;
             const isSelected = selectedRange.start === dateStr || selectedRange.end === dateStr;
             const inRange = isInRange(dateStr);
 
@@ -119,9 +131,11 @@ const ListingDetailsCard: React.FC<ListingDetailsCardProps> = ({
                 <button
                     key={dateStr}
                     onClick={() => handleDateClick(day)}
+                    disabled={isPastDate}
                     className={`
           p-2 text-sm rounded-lg transition-colors
-          ${isSelected ? 'bg-teal-600 text-white font-bold' :
+          ${isPastDate ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
+            isSelected ? 'bg-teal-600 text-white font-bold' :
                             inRange ? 'bg-teal-200 text-gray-900' :
                                 'hover:bg-teal-100 text-gray-700'}
         `}
