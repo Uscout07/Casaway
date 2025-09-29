@@ -42,6 +42,7 @@ type Post = {
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
+  const [localDrafts, setLocalDrafts] = useState<{ signup?: any; listing?: any; post?: any; story?: any }>({});
   const [user, setUser] = useState<UserData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -110,6 +111,34 @@ const SettingsPage = () => {
   useEffect(() => {
     fetchUserData();
   }, []); // Fetch user data once on component mount
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const signup = localStorage.getItem('draft_signup');
+      const listing = localStorage.getItem('draft_listing');
+      const post = localStorage.getItem('draft_post');
+      const story = localStorage.getItem('draft_story');
+      setLocalDrafts({
+        signup: signup ? JSON.parse(signup) : undefined,
+        listing: listing ? JSON.parse(listing) : undefined,
+        post: post ? JSON.parse(post) : undefined,
+        story: story ? JSON.parse(story) : undefined,
+      });
+    } catch {}
+  }, [activeTab]);
+
+  const clearLocalDraft = (key: 'signup'|'listing'|'post'|'story') => {
+    if (typeof window === 'undefined') return;
+    const map: Record<string, string> = {
+      signup: 'draft_signup',
+      listing: 'draft_listing',
+      post: 'draft_post',
+      story: 'draft_story',
+    };
+    localStorage.removeItem(map[key]);
+    setLocalDrafts(prev => ({ ...prev, [key]: undefined }));
+  };
 
   useEffect(() => {
     if (user?._id && activeTab === 'listings' && !editingListingId) { // Only fetch if userId available, on listings tab, and NOT editing
@@ -580,7 +609,11 @@ const SettingsPage = () => {
         });
       } else {
         const errorData = await response.json();
-        setPasswordErrors({ general: errorData.msg || 'Failed to change password.' });
+        if (response.status === 429) {
+          setPasswordErrors({ general: errorData.msg || 'Rate limit exceeded. You can change your password 3 times every 24 hours.' });
+        } else {
+          setPasswordErrors({ general: errorData.msg || 'Failed to change password.' });
+        }
       }
     } catch (error) {
       setPasswordErrors({ general: 'Network error or unexpected issue.' });
@@ -652,7 +685,11 @@ const SettingsPage = () => {
         setCodeSent(false);
         setPasswordMethod('current');
       } else {
-        setCodeErrors({ general: data.msg || 'Failed to change password.' });
+        if (response.status === 429) {
+          setCodeErrors({ general: data.msg || 'Rate limit exceeded. You can change your password 3 times every 24 hours.' });
+        } else {
+          setCodeErrors({ general: data.msg || 'Failed to change password.' });
+        }
       }
     } catch (error) {
       setCodeErrors({ general: 'Network error or unexpected issue.' });
@@ -752,6 +789,7 @@ const SettingsPage = () => {
     { id: 'profile', icon: 'mdi:account-outline', label: 'Profile' },
     { id: 'listings', icon: 'mdi:home-city-outline', label: 'My Listings' },
     { id: 'posts', icon: 'mdi:post-outline', label: 'My Posts' },
+    { id: 'drafts', icon: 'mdi:file-document-edit-outline', label: 'Drafts' },
     { id: 'activity', icon: 'mdi:heart-outline', label: 'Activity' },
     { id: 'security', icon: 'mdi:security', label: 'Security' }
   ];
@@ -815,7 +853,7 @@ const SettingsPage = () => {
             {/* Main Content Area */}
             <div className="flex-1 lg:w-3/4 p-4 sm:p-6 lg:p-8 relative">
               {loading && (
-                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
                   <p className="text-forest text-lg">Loading...</p>
                 </div>
               )}
@@ -1050,6 +1088,82 @@ const SettingsPage = () => {
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Drafts Tab */}
+              {activeTab === 'drafts' && (
+                <div className="space-y-6">
+                  <div className="text-center lg:text-left">
+                    <h2 className="text-2xl sm:text-3xl font-semibold text-forest">Drafts</h2>
+                    <p className="text-forest/70">Resume or delete your locally saved drafts</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-white rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Signup Draft</span>
+                        {localDrafts.signup && (<button className="text-sm text-red-600" onClick={() => clearLocalDraft('signup')}>Delete</button>)}
+                      </div>
+                      {localDrafts.signup ? (
+                        <div className="text-sm text-gray-700">
+                          <div><strong>Name:</strong> {localDrafts.signup.name || '-'}</div>
+                          <div><strong>Username:</strong> {localDrafts.signup.username || '-'}</div>
+                          <div><strong>Email:</strong> {localDrafts.signup.email || '-'}</div>
+                          <div className="mt-2">
+                            <a href="/auth?mode=register" className="text-forest underline">Resume</a>
+                          </div>
+                        </div>
+                      ) : <div className="text-sm text-gray-500">No signup draft saved.</div>}
+                    </div>
+
+                    <div className="p-4 bg-white rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Listing Draft</span>
+                        {localDrafts.listing && (<button className="text-sm text-red-600" onClick={() => clearLocalDraft('listing')}>Delete</button>)}
+                      </div>
+                      {localDrafts.listing ? (
+                        <div className="text-sm text-gray-700">
+                          <div><strong>Title:</strong> {localDrafts.listing.title || '-'}</div>
+                          <div><strong>City:</strong> {localDrafts.listing.city || '-'}</div>
+                          <div><strong>Country:</strong> {localDrafts.listing.country || '-'}</div>
+                          <div className="mt-2">
+                            <a href="/upload?mode=listing" className="text-forest underline">Resume</a>
+                          </div>
+                        </div>
+                      ) : <div className="text-sm text-gray-500">No listing draft saved.</div>}
+                    </div>
+
+                    <div className="p-4 bg-white rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Post Draft</span>
+                        {localDrafts.post && (<button className="text-sm text-red-600" onClick={() => clearLocalDraft('post')}>Delete</button>)}
+                      </div>
+                      {localDrafts.post ? (
+                        <div className="text-sm text-gray-700">
+                          <div><strong>City:</strong> {localDrafts.post.city || '-'}</div>
+                          <div><strong>Country:</strong> {localDrafts.post.country || '-'}</div>
+                          <div className="mt-2">
+                            <a href="/upload?mode=post" className="text-forest underline">Resume</a>
+                          </div>
+                        </div>
+                      ) : <div className="text-sm text-gray-500">No post draft saved.</div>}
+                    </div>
+
+                    <div className="p-4 bg-white rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Story Draft</span>
+                        {localDrafts.story && (<button className="text-sm text-red-600" onClick={() => clearLocalDraft('story')}>Delete</button>)}
+                      </div>
+                      {localDrafts.story ? (
+                        <div className="text-sm text-gray-700">
+                          <div><strong>Caption:</strong> {localDrafts.story.caption || '-'}</div>
+                          <div className="mt-2">
+                            <a href="/upload?mode=story" className="text-forest underline">Resume</a>
+                          </div>
+                        </div>
+                      ) : <div className="text-sm text-gray-500">No story draft saved.</div>}
+                    </div>
                   </div>
                 </div>
               )}

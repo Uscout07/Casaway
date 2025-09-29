@@ -61,6 +61,43 @@ const UploadListingPage = () => {
         status: 'draft'
     });
 
+    // Load local draft on mount
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const draftRaw = localStorage.getItem('draft_listing');
+            if (draftRaw) {
+                const d = JSON.parse(draftRaw);
+                setFormData(prev => ({
+                    ...prev,
+                    title: d.title ?? prev.title,
+                    details: d.details ?? prev.details,
+                    country: d.country ?? prev.country,
+                    city: d.city ?? prev.city,
+                }));
+                if (Array.isArray(d.selectedFacilities)) setSelectedFacilities(d.selectedFacilities);
+                if (Array.isArray(d.selectedFeatures)) setSelectedFeatures(d.selectedFeatures);
+                if (Array.isArray(d.livingWith)) setLivingWith(d.livingWith);
+            }
+        } catch {}
+    }, []);
+
+    const handleSaveLocalListingDraft = () => {
+        if (typeof window === 'undefined') return;
+        const draft = {
+            title: formData.title,
+            details: formData.details,
+            country: formData.country,
+            city: formData.city,
+            selectedFacilities,
+            selectedFeatures,
+            livingWith,
+            savedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('draft_listing', JSON.stringify(draft));
+        alert('Listing draft saved locally. You can resume from Settings > Drafts.');
+    };
+
     const facilities = [
         { id: 'washing-machine', name: 'Washing Machine', icon: 'mdi:washing-machine' },
         { id: 'dryer', name: 'Dryer', icon: 'mdi:tumble-dryer' },
@@ -843,6 +880,13 @@ const testWifiSpeed = (): Promise<{ download: number; upload: number }> => {
 
                         {/* Action Buttons */}
                         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4 mb-5">
+                            <button
+                                type="button"
+                                onClick={handleSaveLocalListingDraft}
+                                className="w-full sm:flex-1 border border-forest text-forest py-2 sm:py-3 rounded-lg font-medium hover:bg-forest-light/30 transition-colors text-sm sm:text-base"
+                            >
+                                Save Local Draft
+                            </button>
                             <button
                                 onClick={() => handleSubmitListing('draft')}
                                 disabled={isLoading}

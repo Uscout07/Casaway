@@ -35,6 +35,28 @@ export default function StoryUpload() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null); // State for error messages
 
+  // Load story draft
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const draftRaw = localStorage.getItem('draft_story');
+      if (draftRaw) {
+        const d = JSON.parse(draftRaw);
+        setCaption(d.caption ?? '');
+      }
+    } catch {}
+  }, []);
+
+  const handleSaveStoryDraftLocal = () => {
+    if (typeof window === 'undefined') return;
+    const draft = {
+      caption,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('draft_story', JSON.stringify(draft));
+    alert('Story draft saved locally. You can resume from Settings > Drafts.');
+  };
+
   // No need for manual authentication - AuthContext handles this
 
   const handleFileSelect = (selectedFile: File | null) => {
@@ -172,13 +194,22 @@ export default function StoryUpload() {
           placeholder="Add a caption to your story..."
         />
          <div className="pt-2">
-        <button
-          onClick={handleUpload}
-          disabled={loading || !file} // Disable if no file is selected
-          className="w-full bg-forest text-white py-3 rounded-lg font-medium hover:bg-forest-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Uploading...' : 'Upload Story'}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={handleSaveStoryDraftLocal}
+            className="flex-1 border border-forest text-forest py-3 rounded-lg font-medium hover:bg-forest-light/30"
+          >
+            Save Local Draft
+          </button>
+          <button
+            onClick={handleUpload}
+            disabled={loading || !file} // Disable if no file is selected
+            className="flex-1 bg-forest text-white py-3 rounded-lg font-medium hover:bg-forest-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Uploading...' : 'Upload Story'}
+          </button>
+        </div>
       </div>
       </div>
 

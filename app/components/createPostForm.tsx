@@ -31,6 +31,34 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
   const [selectedImages, setSelectedImages] = useState<ImageWithUrl[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
+  // Load post draft
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const draftRaw = localStorage.getItem('draft_post');
+      if (draftRaw) {
+        const d = JSON.parse(draftRaw);
+        setCaption(d.caption ?? '');
+        setCountryInput(d.country ?? initialCountry);
+        setCityInput(d.city ?? initialCity);
+        setTagsInput(d.tags ?? '');
+      }
+    } catch {}
+  }, [initialCountry, initialCity]);
+
+  const handleSavePostDraftLocal = () => {
+    if (typeof window === 'undefined') return;
+    const draft = {
+      caption,
+      country: countryInput,
+      city: cityInput,
+      tags: tagsInput,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('draft_post', JSON.stringify(draft));
+    alert('Post draft saved locally. You can resume from Settings > Drafts.');
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
     const files = Array.from(event.target.files);
@@ -253,6 +281,13 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <button
+              type="button"
+              onClick={handleSavePostDraftLocal}
+              className="flex-1 border border-forest text-forest py-3 rounded-lg font-medium hover:bg-forest-light/30"
+            >
+              Save Local Draft
+            </button>
             <button
               onClick={() => handleSubmitPost('draft')}
               disabled={isLoading}
