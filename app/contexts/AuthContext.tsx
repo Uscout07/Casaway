@@ -1,29 +1,73 @@
+/**
+ * Authentication Context - Global State Management
+ * 
+ * This context provides global authentication state management for the Casaway
+ * web application. It handles user authentication, token management, and
+ * automatic authentication validation across the entire application.
+ * 
+ * Key Features:
+ * - Global authentication state management
+ * - JWT token storage and validation
+ * - Automatic token refresh and validation
+ * - User data persistence across sessions
+ * - Authentication status tracking
+ * - Secure logout functionality
+ * - API integration for token validation
+ * 
+ * @author Casaway Development Team
+ * @version 1.0.0
+ */
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 
+/**
+ * User Interface - TypeScript Type Definition
+ * 
+ * Defines the structure of user data stored in the authentication context,
+ * including profile information and authentication status.
+ */
 interface User {
-  _id: string;
-  username: string;
-  name?: string;
-  email?: string;
-  profilePic?: string;
-  prelaunch_completed?: boolean;
+  _id: string;                      // Unique user identifier
+  username: string;                 // Username for login and display
+  name?: string;                    // Display name (optional)
+  email?: string;                   // Email address (optional)
+  profilePic?: string;              // Profile picture URL (optional)
+  prelaunch_completed?: boolean;    // Onboarding completion status
 }
 
+/**
+ * Auth Context Type - Context Interface Definition
+ * 
+ * Defines the shape of the authentication context, including all
+ * state variables and methods available to consuming components.
+ */
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
-  validateToken: () => Promise<boolean>;
+  user: User | null;                // Current authenticated user
+  token: string | null;             // JWT authentication token
+  isLoading: boolean;               // Loading state for auth operations
+  isAuthenticated: boolean;         // Authentication status flag
+  login: (token: string, user: User) => void; // Login method
+  logout: () => void;               // Logout method
+  validateToken: () => Promise<boolean>; // Token validation method
 }
 
+/**
+ * Authentication Context Creation
+ * 
+ * Creates the React context for authentication state management.
+ * Initialized as undefined to enforce proper provider usage.
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Authentication Hook - Context Consumer
+ * 
+ * Custom hook to access the authentication context with proper
+ * error handling for components outside the provider.
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -32,10 +76,21 @@ export const useAuth = () => {
   return context;
 };
 
+/**
+ * Auth Provider Props - Component Props Interface
+ * 
+ * Defines the props interface for the AuthProvider component.
+ */
 interface AuthProviderProps {
   children: ReactNode;
 }
 
+/**
+ * API Base URL Configuration
+ * 
+ * Configure the backend API URL for authentication requests.
+ * Falls back to localhost for development.
+ */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {

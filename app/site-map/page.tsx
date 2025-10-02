@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function Sitemap() {
+export default function SiteMapPage() {
     return (
         <div className="min-h-screen bg-ambient px-6 pt-[10vh] py-12">
             <div className="max-w-4xl mx-auto">
@@ -31,7 +31,7 @@ export default function Sitemap() {
                         <ul className="list-disc list-inside space-y-1">
                             <li><Link href="/settings/privacy-policy">Privacy Policy</Link></li>
                             {/* Add a /terms route if you have terms of use */}
-                            <li><Link href="/sitemap">Sitemap</Link></li>
+                            <li><Link href="/site-map">Sitemap</Link></li>
                         </ul>
                     </div>
                 </div>
@@ -39,3 +39,5 @@ export default function Sitemap() {
         </div>
     );
 }
+
+

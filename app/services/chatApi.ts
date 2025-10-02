@@ -1,7 +1,40 @@
+/**
+ * Chat API Service - Real-time Messaging Integration
+ * 
+ * This service provides comprehensive chat functionality for the Casaway web application,
+ * including direct messaging, group chats, message management, and user interactions.
+ * 
+ * Key Features:
+ * - Direct messaging between users
+ * - Group chat creation and management
+ * - Message sending, editing, and deletion
+ * - User management in group chats
+ * - Admin role management
+ * - Authentication header management
+ * - Error handling and validation
+ * 
+ * @author Casaway Development Team
+ * @version 1.0.0
+ */
+
 'use client';
 
+/**
+ * API Base URL Configuration
+ * 
+ * Configure the backend API URL for chat-related requests.
+ * Falls back to localhost for development.
+ */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+/**
+ * Authentication Headers Helper
+ * 
+ * Generates authentication headers for API requests by retrieving
+ * JWT tokens from localStorage or sessionStorage.
+ * 
+ * @returns Promise resolving to headers object with authentication
+ */
 async function getAuthHeaders() {
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || sessionStorage.getItem('token'))
@@ -12,6 +45,15 @@ async function getAuthHeaders() {
   } as Record<string, string>;
 }
 
+/**
+ * Chat API Service Object
+ * 
+ * Comprehensive chat functionality including:
+ * - Chat management (create, join, leave)
+ * - Message operations (send, edit, delete)
+ * - Group management (members, admins)
+ * - User interactions and permissions
+ */
 export const chatApi = {
   async getUserChats() {
     const headers = await getAuthHeaders();

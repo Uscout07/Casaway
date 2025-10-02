@@ -1,7 +1,12 @@
 {
-  "name": "casaway-web",
-  "version": "0.1.0",
+  "name": "casaway-prelaunch-web",
+  "version": "1.0.0",
+  "description": "Casaway - Home Swapping Platform. Swap homes and find trusted home exchanges worldwide.",
+  "keywords": ["home swap", "home exchange", "house swap", "apartment swap", "vacation home exchange", "room swap", "home sharing", "travel swap"],
+  "author": "Casaway Team",
+  "license": "MIT",
   "private": true,
+  "homepage": "https://casaway.vercel.app",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

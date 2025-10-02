@@ -28,7 +28,7 @@ export default function CongratulationsPage() {
           
           {/* Description */}
           <p className="text-lg text-gray-600 leading-6 mb-8">
-            The official app launch is on <strong>March 15, 2024</strong>.
+            The official app launch is on <strong>October 15, 2025</strong>.
             <br /><br />
             Feel free to post your listing now! Come back to see all listings from college students around the world.
           </p>
@@ -46,7 +46,7 @@ export default function CongratulationsPage() {
               onClick={() => router.push('/home')}
               className="w-full bg-white border-2 border-forest py-4 px-6 rounded-xl text-forest font-semibold text-lg hover:bg-forest-light transition-all duration-300 ease-in-out"
             >
-              Come back on March 15, 2024
+              Come back on October 15, 2025
             </button>
           </div>
 

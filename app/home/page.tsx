@@ -1,4 +1,25 @@
-// app/page.tsx
+/**
+ * Home Page - Main Dashboard and Feed
+ * 
+ * This is the main dashboard page for authenticated users, providing access to:
+ * - Story feed and social content
+ * - Property listing search and filtering
+ * - Interactive search with autocomplete
+ * - Pagination and infinite scroll
+ * - Real-time content updates
+ * 
+ * Key Features:
+ * - Story feed display and interaction
+ * - Advanced search with location autocomplete
+ * - Filter modal for refined searches
+ * - Listing card display with pagination
+ * - Real-time data fetching and updates
+ * - Responsive design for all devices
+ * 
+ * @author Casaway Development Team
+ * @version 1.0.0
+ */
+
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Icon } from '@iconify/react';
@@ -10,7 +31,12 @@ import 'react-datepicker/dist/react-datepicker.css';
 import ListingCard, { ListingCardSkeleton } from '../components/listingCard'; // Import ListingCardSkeleton
 import { Listing } from '../types'; // <--- Crucial: Ensure this is correctly importing the shared Listing type
 
-
+/**
+ * Home Page Component
+ * 
+ * Main dashboard component that displays the story feed, search functionality,
+ * and property listings with comprehensive filtering and pagination.
+ */
 export default function HomePage() {
   const router = useRouter();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';

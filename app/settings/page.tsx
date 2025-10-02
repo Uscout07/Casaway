@@ -612,7 +612,7 @@ const SettingsPage = () => {
         if (response.status === 429) {
           setPasswordErrors({ general: errorData.msg || 'Rate limit exceeded. You can change your password 3 times every 24 hours.' });
         } else {
-          setPasswordErrors({ general: errorData.msg || 'Failed to change password.' });
+        setPasswordErrors({ general: errorData.msg || 'Failed to change password.' });
         }
       }
     } catch (error) {
@@ -687,8 +687,8 @@ const SettingsPage = () => {
       } else {
         if (response.status === 429) {
           setCodeErrors({ general: data.msg || 'Rate limit exceeded. You can change your password 3 times every 24 hours.' });
-        } else {
-          setCodeErrors({ general: data.msg || 'Failed to change password.' });
+      } else {
+        setCodeErrors({ general: data.msg || 'Failed to change password.' });
         }
       }
     } catch (error) {

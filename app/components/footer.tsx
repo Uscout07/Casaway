@@ -76,7 +76,7 @@ export default function Footer() {
               <span>•</span>
               <a href="/privacy" className="hover:text-white transition-colors duration-200">Privacy</a>
               <span>•</span>
-              <a href="/sitemap" className="hover:text-white transition-colors duration-200">Sitemap</a>
+              <a href="/site-map" className="hover:text-white transition-colors duration-200">Sitemap</a>
             </div>
           </div>
         </div>

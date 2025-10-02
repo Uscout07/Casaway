@@ -1,3 +1,23 @@
+/**
+ * Header Component - Main Navigation Bar
+ * 
+ * This component provides the main navigation header for the Casaway web application.
+ * It includes user authentication status, profile management, notifications,
+ * and navigation controls.
+ * 
+ * Key Features:
+ * - User authentication display and management
+ * - Profile dropdown with user actions
+ * - Notification badge and management
+ * - Responsive navigation controls
+ * - Role-based menu items (admin, ambassador)
+ * - Logo and branding display
+ * - Logout functionality
+ * 
+ * @author Casaway Development Team
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { Icon } from "@iconify/react";
@@ -7,13 +27,18 @@ import Image from "next/image";
 import Link from 'next/link';
 import { useAuth } from "../contexts/AuthContext";
 
-
+/**
+ * User Interface - TypeScript Type Definition
+ * 
+ * Defines the structure of user data used in the header component,
+ * including authentication and role information.
+ */
 interface User {
-  _id: string;
-  name: string;
-  username: string;
-  profilePic?: string;
-  role: "user" | "admin" | "ambassador";
+  _id: string;                    // Unique user identifier
+  name: string;                   // Display name
+  username: string;               // Username for profile URLs
+  profilePic?: string;            // Profile picture URL (optional)
+  role: "user" | "admin" | "ambassador"; // User role for permissions
 }
 
 export default function NavBar() {
